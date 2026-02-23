@@ -47,6 +47,12 @@ const AuthMiddleware = {
       return res.status(400).json({ error: "Password must be a string" });
     }
 
+    if (password.length < 12) {
+      return res.status(400).json({
+        error: "Password must be at least 12 characters long",
+      });
+    }
+
     if (!USER_ROLES.includes(role)) {
       return res.status(400).json({ error: "Invalid role" });
     }
@@ -83,6 +89,12 @@ const AuthMiddleware = {
       return res.status(400).json({ error: "Password must be a string" });
     }
 
+    if (password.length < 12) {
+      return res.status(400).json({
+        error: "Password must be at least 12 characters long",
+      });
+    }
+
     next();
   },
 
@@ -111,8 +123,20 @@ const AuthMiddleware = {
       return res.status(400).json({ error: "Old password must be a string" });
     }
 
+    if (oldPassword.length < 12) {
+      return res.status(400).json({
+        error: "Old password must be at least 12 characters long",
+      });
+    }
+
     if (typeof newPassword !== "string") {
       return res.status(400).json({ error: "New password must be a string" });
+    }
+
+    if (newPassword.length < 12) {
+      return res.status(400).json({
+        error: "New password must be at least 12 characters long",
+      });
     }
 
     next();
