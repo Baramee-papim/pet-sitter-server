@@ -1,6 +1,7 @@
 import "dotenv/config";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
+import * as allRelations from "./relations";
 import * as allSchema from "./schema";
 
 if (!process.env.DATABASE_URL) {
@@ -16,6 +17,7 @@ const pool = new pg.Pool({
 
 const db = drizzle(pool, {
   schema: {
+    ...allRelations,
     ...allSchema,
   },
 });
