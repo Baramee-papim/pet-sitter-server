@@ -2,7 +2,6 @@ import AppError from "../errors/AppError";
 import SitterRepository from "../repositories/sitter.repository";
 
 const SitterService = {
-  // TODO comment and rating
   getSitters: async (
     page: number,
     limit: number,
@@ -32,6 +31,12 @@ const SitterService = {
         petTypes: petSitter.petSittersPetTypes.map(
           (petSitterPetType) => petSitterPetType.petType.name,
         ),
+        rating: petSitter.petSitterReviews
+          ? petSitter.petSitterReviews.reduce(
+              (total, review) => total + review.rating,
+              0,
+            ) / petSitter.petSitterReviews.length
+          : null,
         province: petSitter.province?.name ?? null,
         district: petSitter.district?.name ?? null,
         latitude: petSitter.latitude ? Number(petSitter.latitude) : null,
@@ -40,7 +45,6 @@ const SitterService = {
     };
   },
 
-  // TODO comment and rating
   getSitterById: async (sitterId: number) => {
     const result = await SitterRepository.getById(sitterId);
 
@@ -60,6 +64,12 @@ const SitterService = {
       petTypes: result.petSittersPetTypes.map(
         (petSitterPetType) => petSitterPetType.petType.name,
       ),
+      rating: result.petSitterReviews
+        ? result.petSitterReviews.reduce(
+            (total, review) => total + review.rating,
+            0,
+          ) / result.petSitterReviews.length
+        : null,
       province: result.province?.name ?? null,
       district: result.district?.name ?? null,
       subDistrict: result.subDistrict?.name ?? null,

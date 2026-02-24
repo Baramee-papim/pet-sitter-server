@@ -19,7 +19,6 @@ import {
 } from "../db/schema";
 
 const SitterRepository = {
-  // TODO comment and rating
   get: async (
     page: number,
     limit: number,
@@ -87,15 +86,21 @@ const SitterRepository = {
     const whereClause = filters.length ? and(...filters) : undefined;
 
     const result = await db.query.petSitters.findMany({
+      columns: {
+        petSitterId: true,
+        tradeName: true,
+        latitude: true,
+        longitude: true,
+      },
       with: {
-        user: true,
-        petSitterImages: true,
-        province: true,
-        district: true,
+        user: { columns: { name: true, profileImgUrl: true } },
+        petSitterImages: { columns: { imgUrl: true } },
+        petSitterReviews: { columns: { rating: true } },
+        province: { columns: { name: true } },
+        district: { columns: { name: true } },
         petSittersPetTypes: {
-          with: {
-            petType: true,
-          },
+          columns: {},
+          with: { petType: { columns: { name: true } } },
           orderBy: [asc(petTypes.petTypeId)],
         },
       },
@@ -114,19 +119,32 @@ const SitterRepository = {
     return { result, totalPetSitters };
   },
 
-  // TODO comment and rating
   getById: async (sitterId: number) => {
     return await db.query.petSitters.findFirst({
+      columns: {
+        petSitterId: true,
+        tradeName: true,
+        experience: true,
+        introduction: true,
+        services: true,
+        description: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+      },
       with: {
-        user: true,
+        user: { columns: { name: true, profileImgUrl: true } },
         petSitterImages: {
+          columns: { imgUrl: true },
           orderBy: [asc(petSitterImages.imgUrl)],
         },
-        province: true,
-        district: true,
-        subDistrict: true,
+        petSitterReviews: { columns: { rating: true } },
+        province: { columns: { name: true } },
+        district: { columns: { name: true } },
+        subDistrict: { columns: { name: true, postCode: true } },
         petSittersPetTypes: {
-          with: { petType: true },
+          columns: {},
+          with: { petType: { columns: { name: true } } },
           orderBy: [asc(petTypes.petTypeId)],
         },
       },

@@ -4,6 +4,7 @@ import {
   districts,
   subDistricts,
   petSitters,
+  petSitterReviews,
   users,
   petSitterImages,
   petSittersPetTypes,
@@ -35,7 +36,22 @@ export const subDistrictsRelations = relations(
   }),
 );
 
+export const petSitterReviewsRelations = relations(
+  petSitterReviews,
+  ({ one }) => ({
+    petSitter: one(petSitters, {
+      fields: [petSitterReviews.petSitterId],
+      references: [petSitters.petSitterId],
+    }),
+    user: one(users, {
+      fields: [petSitterReviews.userId],
+      references: [users.userId],
+    }),
+  }),
+);
+
 export const petSittersRelations = relations(petSitters, ({ one, many }) => ({
+  petSitterReviews: many(petSitterReviews),
   district: one(districts, {
     fields: [petSitters.districtId],
     references: [districts.districtId],
@@ -57,6 +73,7 @@ export const petSittersRelations = relations(petSitters, ({ one, many }) => ({
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
+  petSitterReviews: many(petSitterReviews),
   petSitters: many(petSitters),
 }));
 

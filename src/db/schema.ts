@@ -5,18 +5,25 @@ import {
   pgPolicy,
   integer,
   varchar,
-  unique,
+  check,
+  serial,
   uuid,
   text,
   timestamp,
-  serial,
+  unique,
   numeric,
   primaryKey,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+export const petSitterStatus = pgEnum("pet_sitter_status", [
+  "Waiting for approval",
+  "Approved",
+  "Rejected",
+]);
 export const userRole = pgEnum("user_role", ["owner", "sitter", "admin"]);
+export const userStatus = pgEnum("user_status", ["Normal", "Banned"]);
 
 export const districts = pgTable(
   "districts",
@@ -87,6 +94,44 @@ export const subDistricts = pgTable(
   ],
 );
 
+export const petSitterReviews = pgTable(
+  "pet_sitter_reviews",
+  {
+    petSitterReviewId: serial("pet_sitter_review_id").primaryKey().notNull(),
+    petSitterId: integer("pet_sitter_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    rating: integer().notNull(),
+    comment: text().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("pet_sitter_reviews_pet_sitter_id_idx").using(
+      "btree",
+      table.petSitterId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("pet_sitter_reviews_user_id_idx").using(
+      "btree",
+      table.userId.asc().nullsLast().op("uuid_ops"),
+    ),
+    foreignKey({
+      columns: [table.petSitterId],
+      foreignColumns: [petSitters.petSitterId],
+      name: "pet_sitter_reviews_pet_sitter_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.userId],
+      name: "pet_sitter_reviews_user_id_fkey",
+    }).onDelete("cascade"),
+    check(
+      "pet_sitter_reviews_rating_check",
+      sql`rating = ANY (ARRAY[1, 2, 3, 4, 5])`,
+    ),
+  ],
+);
+
 export const users = pgTable(
   "users",
   {
@@ -95,6 +140,7 @@ export const users = pgTable(
     phone: varchar({ length: 10 }).notNull(),
     role: userRole().default("owner").notNull(),
     profileImgUrl: text("profile_img_url"),
+    status: userStatus().default("Normal").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -135,6 +181,7 @@ export const petSitters = pgTable(
     provinceId: integer("province_id"),
     districtId: integer("district_id"),
     subDistrictId: integer("sub_district_id"),
+    status: petSitterStatus().default("Waiting for approval").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -151,10 +198,6 @@ export const petSitters = pgTable(
     index("pet_sitters_sub_district_id_idx").using(
       "btree",
       table.subDistrictId.asc().nullsLast().op("int4_ops"),
-    ),
-    index("pet_sitters_user_id_idx").using(
-      "btree",
-      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.districtId],
@@ -176,6 +219,7 @@ export const petSitters = pgTable(
       foreignColumns: [users.userId],
       name: "pet_sitters_user_id_fkey",
     }).onDelete("cascade"),
+    unique("pet_sitters_user_id_key").on(table.userId),
     unique("pet_sitters_trade_name_key").on(table.tradeName),
   ],
 );

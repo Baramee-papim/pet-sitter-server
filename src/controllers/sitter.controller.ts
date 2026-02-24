@@ -4,7 +4,6 @@ import SitterService from "../services/sitter.service";
 import { GetSitterQuery, SitterIdParams } from "../types/sitter";
 
 const SitterController = {
-  // TODO comment and rating
   getSitters: async (
     req: Request<{}, {}, {}, GetSitterQuery>,
     res: Response,
@@ -54,6 +53,7 @@ const SitterController = {
         sitter: petSitter.sitter,
         imgUrl: petSitter.petSitterImage,
         tradeName: petSitter.tradeName,
+        rating: petSitter.rating,
         petTypes: petSitter.petTypes,
         latitude: petSitter.latitude,
         longitude: petSitter.longitude,
@@ -65,7 +65,6 @@ const SitterController = {
     return res.status(200).json(sittersResponse);
   },
 
-  // TODO comment and rating
   getSitterById: async (req: Request<SitterIdParams>, res: Response) => {
     const sitterId = Number(req.params.sitterId);
     let result;
@@ -88,8 +87,9 @@ const SitterController = {
       id: result.petSitterId,
       sitter: result.sitter,
       imgUrls: result.petSitterImages,
-      experience: result.experience,
       tradeName: result.tradeName,
+      experience: result.experience,
+      rating: result.rating,
       petTypes: result.petTypes,
       introduction: result.introduction,
       services: result.services,
