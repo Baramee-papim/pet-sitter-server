@@ -1,13 +1,18 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import SitterService from "../services/sitter.service";
-import { GetSitterQuery, SitterIdParams } from "../types/sitter";
+import {
+  GetSittersBody,
+  GetSittersQuery,
+  SitterIdParams,
+} from "../types/sitter";
 
 const SitterController = {
   getSitters: async (
-    req: Request<{}, {}, {}, GetSitterQuery>,
+    req: Request<{}, {}, GetSittersBody, GetSittersQuery>,
     res: Response,
   ) => {
+    const seed = req.body.seed;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
     const keyword = req.query.keyword ? req.query.keyword.trim() : null;
@@ -29,6 +34,7 @@ const SitterController = {
 
     try {
       result = await SitterService.getSitters(
+        seed,
         page,
         limit,
         keyword,
@@ -53,7 +59,7 @@ const SitterController = {
         sitter: petSitter.sitter,
         imgUrl: petSitter.petSitterImage,
         tradeName: petSitter.tradeName,
-        rating: petSitter.rating,
+        rating: petSitter.ratingAvg,
         petTypes: petSitter.petTypes,
         latitude: petSitter.latitude,
         longitude: petSitter.longitude,
@@ -89,7 +95,7 @@ const SitterController = {
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
       experience: result.experience,
-      rating: result.rating,
+      rating: result.ratingAvg,
       petTypes: result.petTypes,
       introduction: result.introduction,
       services: result.services,
