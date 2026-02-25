@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import AuthRoute from "./routes/auth.route";
 import SitterRoute from "./routes/sitter.route";
+import UserRoute from "./routes/user.route";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -27,6 +28,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", AuthRoute);
+app.use("/user", UserRoute);
 app.use("/pet-sitter", SitterRoute);
 
 app.listen(PORT, () => {
