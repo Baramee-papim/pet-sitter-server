@@ -182,6 +182,8 @@ export const petSitters = pgTable(
     districtId: integer("district_id"),
     subDistrictId: integer("sub_district_id"),
     status: petSitterStatus().default("Waiting for approval").notNull(),
+    ratingAvg: numeric("rating_avg", { precision: 3, scale: 2 }),
+    ratingBucket: integer("rating_bucket"),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -194,6 +196,10 @@ export const petSitters = pgTable(
     index("pet_sitters_province_id_idx").using(
       "btree",
       table.provinceId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("pet_sitters_rating_bucket_idx").using(
+      "btree",
+      table.ratingBucket.asc().nullsLast().op("int4_ops"),
     ),
     index("pet_sitters_sub_district_id_idx").using(
       "btree",
@@ -221,6 +227,14 @@ export const petSitters = pgTable(
     }).onDelete("cascade"),
     unique("pet_sitters_user_id_key").on(table.userId),
     unique("pet_sitters_trade_name_key").on(table.tradeName),
+    check(
+      "pet_sitters_rating_avg_check",
+      sql`(rating_avg IS NULL) OR ((rating_avg >= (1)::numeric) AND (rating_avg <= (5)::numeric))`,
+    ),
+    check(
+      "pet_sitters_rating_bucket_check",
+      sql`(rating_bucket IS NULL) OR (rating_bucket = ANY (ARRAY[1, 2, 3, 4, 5]))`,
+    ),
   ],
 );
 

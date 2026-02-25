@@ -3,6 +3,7 @@ import SitterRepository from "../repositories/sitter.repository";
 
 const SitterService = {
   getSitters: async (
+    seed: string,
     page: number,
     limit: number,
     keyword: string | null,
@@ -11,10 +12,12 @@ const SitterService = {
     experience: number[] | null,
   ) => {
     const { result, totalPetSitters } = await SitterRepository.get(
+      seed,
       page,
       limit,
       keyword,
       petType,
+      rating,
       experience,
     );
 
@@ -31,16 +34,11 @@ const SitterService = {
         petTypes: petSitter.petSittersPetTypes.map(
           (petSitterPetType) => petSitterPetType.petType.name,
         ),
-        rating: petSitter.petSitterReviews
-          ? petSitter.petSitterReviews.reduce(
-              (total, review) => total + review.rating,
-              0,
-            ) / petSitter.petSitterReviews.length
-          : null,
         province: petSitter.province?.name ?? null,
         district: petSitter.district?.name ?? null,
         latitude: petSitter.latitude ? Number(petSitter.latitude) : null,
         longitude: petSitter.longitude ? Number(petSitter.longitude) : null,
+        ratingAvg: petSitter.ratingAvg ? Number(petSitter.ratingAvg) : null,
       })),
     };
   },
@@ -64,12 +62,6 @@ const SitterService = {
       petTypes: result.petSittersPetTypes.map(
         (petSitterPetType) => petSitterPetType.petType.name,
       ),
-      rating: result.petSitterReviews
-        ? result.petSitterReviews.reduce(
-            (total, review) => total + review.rating,
-            0,
-          ) / result.petSitterReviews.length
-        : null,
       province: result.province?.name ?? null,
       district: result.district?.name ?? null,
       subDistrict: result.subDistrict?.name ?? null,
@@ -77,6 +69,7 @@ const SitterService = {
       experience: result.experience ? Number(result.experience) : null,
       latitude: result.latitude ? Number(result.latitude) : null,
       longitude: result.longitude ? Number(result.longitude) : null,
+      ratingAvg: result.ratingAvg ? Number(result.ratingAvg) : null,
     };
   },
 };

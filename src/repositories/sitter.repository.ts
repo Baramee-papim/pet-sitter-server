@@ -9,6 +9,7 @@ import {
   inArray,
   lte,
   or,
+  sql,
 } from "drizzle-orm";
 import db from "../db/db";
 import {
@@ -20,10 +21,12 @@ import {
 
 const SitterRepository = {
   get: async (
+    seed: string,
     page: number,
     limit: number,
     keyword: string | null,
     petType: string[] | null,
+    rating: number | null,
     experience: number[] | null,
   ) => {
     const offset = (page - 1) * limit;
@@ -91,6 +94,7 @@ const SitterRepository = {
         tradeName: true,
         latitude: true,
         longitude: true,
+        ratingAvg: true,
       },
       with: {
         user: { columns: { name: true, profileImgUrl: true } },
@@ -105,6 +109,10 @@ const SitterRepository = {
         },
       },
       where: whereClause,
+      orderBy: [
+        ...(rating ? [sql`ABS(${petSitters.ratingBucket} - ${rating})`] : []),
+        sql`md5(${petSitters.petSitterId}::text || ${seed})`,
+      ],
       limit,
       offset,
     });
@@ -131,6 +139,7 @@ const SitterRepository = {
         address: true,
         latitude: true,
         longitude: true,
+        ratingAvg: true,
       },
       with: {
         user: { columns: { name: true, profileImgUrl: true } },

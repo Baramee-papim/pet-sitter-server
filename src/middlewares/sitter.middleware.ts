@@ -1,8 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import { GetSitterQuery, SitterIdParams } from "../types/sitter";
-
-const petTypeRegex = /^[A-Za-z,]+$/;
-const experienceRegex = /^(?:\d+-\d*|\-\d+)$/;
+import {
+  GetSittersBody,
+  GetSittersQuery,
+  SitterIdParams,
+} from "../types/sitter";
+import { experienceRegex, petTypeRegex } from "../utils/regex";
 
 const SitterMiddleware = {
   sitterId: (
@@ -23,10 +25,24 @@ const SitterMiddleware = {
   },
 
   getSittersQuery: (
-    req: Request<{}, {}, {}, GetSitterQuery>,
+    req: Request<{}, {}, Partial<GetSittersBody>, GetSittersQuery>,
     res: Response,
     next: NextFunction,
   ) => {
+    if (!req.body) {
+      return res.status(400).json({ error: "Body is required" });
+    }
+
+    const { seed } = req.body;
+
+    if (!seed) {
+      return res.status(400).json({ error: "Seed is required" });
+    }
+
+    if (typeof seed !== "string") {
+      return res.status(400).json({ error: "Seed must be a string" });
+    }
+
     const { page, limit, pet_type, rating, experience } = req.query;
     const parsedPage = Number(page);
     const parsedlimit = Number(limit);
