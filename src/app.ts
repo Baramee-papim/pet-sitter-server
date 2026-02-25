@@ -1,7 +1,8 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
-import authRoute from "./routes/auth.route";
+import AuthRoute from "./routes/auth.route";
+import SitterRoute from "./routes/sitter.route";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -25,7 +26,8 @@ app.get("/health", (req, res) => {
   return res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
-app.use("/auth", authRoute);
+app.use("/auth", AuthRoute);
+app.use("/pet-sitter", SitterRoute);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
