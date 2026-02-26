@@ -39,7 +39,7 @@ const UserRepository = {
     idNumber: string | null | undefined,
     dateOfBirth: string | null | undefined,
   ) => {
-    return await db
+    await db
       .update(users)
       .set({ name, phone, idNumber, dateOfBirth })
       .where(eq(users.userId, userId));

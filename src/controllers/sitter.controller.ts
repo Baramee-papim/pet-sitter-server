@@ -166,7 +166,7 @@ const SitterController = {
       return res.status(500).json({ error: "Internal server error" });
     }
 
-    res.status(200).json({ message: "Updated successfully" });
+    return res.status(200).json({ message: "Updated successfully" });
   },
 };
 

@@ -191,7 +191,7 @@ const SitterRepository = {
     districtId: number,
     subDistrictId: number,
   ) => {
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       await tx
         .update(petSitters)
         .set({

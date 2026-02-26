@@ -4,6 +4,7 @@ import {
   dateRegex,
   emailRegex,
   idNumberRegex,
+  nameRegex,
   phoneRegex,
 } from "../utils/regex";
 import validateIdNumber from "../utils/validateIdNumber";
@@ -33,6 +34,10 @@ const UserMiddleware = {
     // Type validations
     if (typeof name !== "string") {
       return res.status(400).json({ error: "Name must be a string" });
+    }
+
+    if (!nameRegex.test(name)) {
+      return res.status(400).json({ error: "Invalid name" });
     }
 
     if (name.length < 2) {
@@ -73,6 +78,12 @@ const UserMiddleware = {
       const date = new Date(dateOfBirth);
       if (Number.isNaN(date.getTime())) {
         return res.status(400).json({ error: "Invalid date of birth" });
+      }
+
+      if (date > new Date()) {
+        return res.status(400).json({
+          error: "Date of birth must be in the past",
+        });
       }
     }
 

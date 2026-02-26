@@ -166,6 +166,18 @@ const SitterMiddleware = {
       return res.status(400).json({ error: "Experience must be a number" });
     }
 
+    if (experience < 0) {
+      return res.status(400).json({
+        error: "Experience must be greater than 0",
+      });
+    }
+
+    if (experience >= 100) {
+      return res.status(400).json({
+        error: "Experience must be less than 100",
+      });
+    }
+
     if (String(experience).split(".")[1]?.length > 1) {
       return res.status(400).json({
         error: "Experience must be a multiple of 0.1",
