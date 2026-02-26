@@ -1,9 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { LoginBody, RegisterBody, ResetPasswordBody } from "../types/auth";
 import { USER_ROLES } from "../types/user";
-
-const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const phoneRegex = /^0\d{9}$/;
+import { emailRegex, phoneRegex } from "../utils/regex";
 
 const AuthMiddleware = {
   register: (
@@ -37,6 +35,10 @@ const AuthMiddleware = {
     // Type validations
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email address" });
+    }
+
+    if (typeof phone !== "string") {
+      return res.status(400).json({ error: "Phone must be a string" });
     }
 
     if (!phoneRegex.test(phone)) {

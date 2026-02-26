@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   unique,
+  date,
   numeric,
   primaryKey,
   pgEnum,
@@ -140,12 +141,21 @@ export const users = pgTable(
     phone: varchar({ length: 10 }).notNull(),
     role: userRole().default("owner").notNull(),
     profileImgUrl: text("profile_img_url"),
+    idNumber: varchar("id_number", { length: 13 }),
+    dateOfBirth: date("date_of_birth"),
     status: userStatus().default("Normal").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
   },
-  (table) => [unique("users_phone_key").on(table.phone)],
+  (table) => [
+    unique("users_phone_key").on(table.phone),
+    unique("users_id_number_key").on(table.idNumber),
+    check(
+      "users_id_number_format_check",
+      sql`(id_number)::text ~ '^[0-9]{13}$'::text`,
+    ),
+  ],
 );
 
 export const petTypes = pgTable(

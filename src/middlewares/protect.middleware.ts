@@ -1,10 +1,13 @@
 import { NextFunction, Request, Response } from "express";
+import { User } from "@supabase/supabase-js";
 import UserRepository from "../repositories/user.repository";
 import supabase from "../supabase/client";
 import { UserRole } from "../types/user";
 
+type RequestWithUser = Request & { user?: User & { role: UserRole } };
+
 function protect(role: UserRole, message: string) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: RequestWithUser, res: Response, next: NextFunction) => {
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
@@ -40,7 +43,7 @@ function protect(role: UserRole, message: string) {
 const ProtectMiddleware = {
   owner: protect("owner", "Forbidden: You do not have pet owner access"),
 
-  petSitter: protect("sitter", "Forbidden: You do not have pet sitter access"),
+  sitter: protect("sitter", "Forbidden: You do not have pet sitter access"),
 
   admin: protect("admin", "Forbidden: You do not have admin access"),
 };

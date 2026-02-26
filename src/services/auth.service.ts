@@ -63,6 +63,28 @@ const AuthService = {
     return { user: (await UserRepository.getById(data.user.id))[0], data };
   },
 
+  changeEmail: async (oldEmail: string, newEmail: string, password: string) => {
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: oldEmail,
+      password: password,
+    });
+
+    if (loginError) {
+      throw new AppError(400, "Invalid password");
+    }
+
+    const { error: emailError } = await supabase.auth.updateUser({
+      email: newEmail,
+    });
+
+    if (emailError) {
+      if (emailError.code === "email_exists") {
+        throw new AppError(400, "User with this new email already exists");
+      }
+      throw new AppError(400, emailError.message);
+    }
+  },
+
   resetPassword: async (
     token: string,
     oldPassword: string,

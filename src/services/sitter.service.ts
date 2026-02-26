@@ -72,6 +72,48 @@ const SitterService = {
       ratingAvg: result.ratingAvg ? Number(result.ratingAvg) : null,
     };
   },
+
+  // TODO image
+  updateSitter: async (
+    userId: string,
+    experience: number,
+    tradeName: string,
+    petTypeIds: number[] | undefined | null,
+    introduction: string | null | undefined,
+    services: string | null | undefined,
+    description: string | null | undefined,
+    address: string,
+    latitude: number,
+    longitude: number,
+    provinceId: number,
+    districtId: number,
+    subDistrictId: number,
+  ) => {
+    const sitterId = (await SitterRepository.getByUserId(userId))[0]
+      .petSitterId;
+
+    const lookupSitter = (await SitterRepository.getByTradeName(tradeName))[0];
+
+    if (lookupSitter && lookupSitter.petSitterId !== sitterId) {
+      throw new AppError(400, "Sitter with this trade name already exists");
+    }
+
+    await SitterRepository.update(
+      sitterId,
+      experience,
+      tradeName,
+      petTypeIds,
+      introduction,
+      services,
+      description,
+      address,
+      latitude,
+      longitude,
+      provinceId,
+      districtId,
+      subDistrictId,
+    );
+  },
 };
 
 export default SitterService;

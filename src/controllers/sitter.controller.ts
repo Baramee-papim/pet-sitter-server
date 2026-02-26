@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
+import AuthService from "../services/auth.service";
 import SitterService from "../services/sitter.service";
 import {
   GetSittersBody,
   GetSittersQuery,
   SitterIdParams,
+  UpdateSitterBody,
 } from "../types/sitter";
 
 const SitterController = {
@@ -110,6 +112,61 @@ const SitterController = {
     };
 
     return res.status(200).json(sitterResponse);
+  },
+
+  // TODO image
+  updateSitter: async (
+    req: Request<{}, {}, UpdateSitterBody>,
+    res: Response,
+  ) => {
+    const {
+      experience,
+      tradeName,
+      petTypeIds,
+      introduction,
+      services,
+      description,
+      address,
+      latitude,
+      longitude,
+      provinceId,
+      districtId,
+      subDistrictId,
+    } = req.body;
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
+    try {
+      const result = await AuthService.getUser(token);
+
+      await SitterService.updateSitter(
+        result.data.user.id,
+        experience,
+        tradeName,
+        petTypeIds,
+        introduction,
+        services,
+        description,
+        address,
+        latitude,
+        longitude,
+        provinceId,
+        districtId,
+        subDistrictId,
+      );
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    res.status(200).json({ message: "Updated successfully" });
   },
 };
 

@@ -12,6 +12,10 @@ const UserRepository = {
     return await db.select().from(users).where(eq(users.phone, phone));
   },
 
+  getByIdNumber: async (idNumber: string) => {
+    return await db.select().from(users).where(eq(users.idNumber, idNumber));
+  },
+
   create: async (userId: string, phone: string, role: UserRole) => {
     const defaultName = role === "owner" ? "New Guest" : "New Sitter";
 
@@ -25,6 +29,20 @@ const UserRepository = {
         await tx.insert(petSitters).values({ userId: user.userId });
       }
     });
+  },
+
+  // TODO image
+  update: async (
+    userId: string,
+    name: string,
+    phone: string,
+    idNumber: string | null | undefined,
+    dateOfBirth: string | null | undefined,
+  ) => {
+    return await db
+      .update(users)
+      .set({ name, phone, idNumber, dateOfBirth })
+      .where(eq(users.userId, userId));
   },
 };
 

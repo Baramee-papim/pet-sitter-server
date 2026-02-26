@@ -14,3 +14,18 @@ export interface GetSittersQuery {
 export interface GetSittersBody {
   seed: string;
 }
+
+export interface UpdateSitterBody {
+  experience: number;
+  tradeName: string;
+  petTypeIds?: number[] | null;
+  introduction?: string | null;
+  services?: string | null;
+  description?: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+  provinceId: number;
+  districtId: number;
+  subDistrictId: number;
+}

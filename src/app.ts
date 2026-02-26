@@ -2,6 +2,7 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import AuthRoute from "./routes/auth.route";
+import OwnerRoute from "./routes/owner.route";
 import SitterRoute from "./routes/sitter.route";
 
 const app = express();
@@ -27,6 +28,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", AuthRoute);
+app.use("/pet-owner", OwnerRoute);
 app.use("/pet-sitter", SitterRoute);
 
 app.listen(PORT, () => {
