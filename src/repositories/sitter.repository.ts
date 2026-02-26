@@ -160,6 +160,71 @@ const SitterRepository = {
       where: (sitter) => eq(sitter.petSitterId, sitterId),
     });
   },
+
+  getByUserId: async (userId: string) => {
+    return await db
+      .select()
+      .from(petSitters)
+      .where(eq(petSitters.userId, userId));
+  },
+
+  getByTradeName: async (tradeName: string) => {
+    return await db
+      .select()
+      .from(petSitters)
+      .where(eq(petSitters.tradeName, tradeName));
+  },
+
+  // TODO image
+  update: async (
+    sitterId: number,
+    experience: number,
+    tradeName: string,
+    petTypeIds: number[] | undefined | null,
+    introduction: string | null | undefined,
+    services: string | null | undefined,
+    description: string | null | undefined,
+    address: string,
+    latitude: number,
+    longitude: number,
+    provinceId: number,
+    districtId: number,
+    subDistrictId: number,
+  ) => {
+    return await db.transaction(async (tx) => {
+      await tx
+        .update(petSitters)
+        .set({
+          experience: String(experience),
+          tradeName,
+          introduction,
+          services,
+          description,
+          address,
+          latitude: String(latitude),
+          longitude: String(longitude),
+          provinceId,
+          districtId,
+          subDistrictId,
+        })
+        .where(eq(petSitters.petSitterId, sitterId));
+
+      if (typeof petTypeIds !== "undefined") {
+        await tx
+          .delete(petSittersPetTypes)
+          .where(eq(petSittersPetTypes.petSitterId, sitterId));
+
+        if (petTypeIds) {
+          await tx.insert(petSittersPetTypes).values(
+            petTypeIds.map((petTypeId) => ({
+              petSitterId: sitterId,
+              petTypeId,
+            })),
+          );
+        }
+      }
+    });
+  },
 };
 
 export default SitterRepository;
