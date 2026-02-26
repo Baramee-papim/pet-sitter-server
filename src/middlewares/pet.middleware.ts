@@ -1,8 +1,21 @@
 import { NextFunction, Request, Response } from "express";
-import { PET_SEXES, PetBody } from "../types/owner";
+import { PET_SEXES, PetBody, PetIdParams } from "../types/pet";
 import { dateRegex, nameRegex } from "../utils/regex";
 
-const OwnerMiddleware = {
+const PetMiddleware = {
+  petId: (req: Request<PetIdParams>, res: Response, next: NextFunction) => {
+    const petId = req.params.petId;
+    const parsedPetId = Number(petId);
+
+    if (!Number.isInteger(parsedPetId) || parsedPetId <= 0) {
+      return res.status(400).json({
+        error: "Pet ID must be a positive integer",
+      });
+    }
+
+    next();
+  },
+
   // TODO image
   petBody: (
     req: Request<{}, {}, Partial<PetBody>>,
@@ -161,4 +174,4 @@ const OwnerMiddleware = {
   },
 };
 
-export default OwnerMiddleware;
+export default PetMiddleware;
