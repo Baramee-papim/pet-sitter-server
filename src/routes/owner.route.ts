@@ -9,15 +9,13 @@ const OwnerRoute = Router();
 
 OwnerRoute.post(
   "/pet",
-  OwnerMiddleware.petBody,
-  ProtectMiddleware.owner,
+  [OwnerMiddleware.petBody, ProtectMiddleware.owner],
   OwnerController.createPet,
 );
 
 OwnerRoute.put(
   "/user",
-  UserMiddleware.updateUserBody,
-  ProtectMiddleware.owner,
+  [UserMiddleware.updateUserBody, ProtectMiddleware.owner],
   UserController.updateUser,
 );
 

@@ -6,13 +6,13 @@ const AuthRoute = Router();
 
 AuthRoute.get("/get-user", AuthController.getUser);
 
-AuthRoute.post("/register", AuthMiddleware.register, AuthController.register);
+AuthRoute.post("/register", [AuthMiddleware.register], AuthController.register);
 
-AuthRoute.post("/login", AuthMiddleware.login, AuthController.login);
+AuthRoute.post("/login", [AuthMiddleware.login], AuthController.login);
 
 AuthRoute.put(
   "/reset-password",
-  AuthMiddleware.resetPassword,
+  [AuthMiddleware.resetPassword],
   AuthController.resetPassword,
 );
 

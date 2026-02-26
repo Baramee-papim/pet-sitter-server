@@ -13,7 +13,7 @@ const SitterMiddleware = {
     res: Response,
     next: NextFunction,
   ) => {
-    const { sitterId } = req.params;
+    const sitterId = req.params.sitterId;
     const parsedSitterId = Number(sitterId);
 
     if (!Number.isInteger(parsedSitterId) || parsedSitterId <= 0) {

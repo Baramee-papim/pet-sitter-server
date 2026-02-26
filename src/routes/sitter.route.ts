@@ -9,27 +9,25 @@ const SitterRoute = Router();
 
 SitterRoute.get(
   "/",
-  SitterMiddleware.getSittersQuery,
+  [SitterMiddleware.getSittersQuery],
   SitterController.getSitters,
 );
 
 SitterRoute.get(
   "/:sitterId",
-  SitterMiddleware.sitterId,
+  [SitterMiddleware.sitterId],
   SitterController.getSitterById,
 );
 
 SitterRoute.put(
   "/",
-  SitterMiddleware.updateSitterBody,
-  ProtectMiddleware.sitter,
+  [SitterMiddleware.updateSitterBody, ProtectMiddleware.sitter],
   SitterController.updateSitter,
 );
 
 SitterRoute.put(
   "/user",
-  UserMiddleware.updateUserBody,
-  ProtectMiddleware.sitter,
+  [UserMiddleware.updateUserBody, ProtectMiddleware.sitter],
   UserController.updateUser,
 );
 
