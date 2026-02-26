@@ -18,7 +18,7 @@ export interface GetSittersBody {
 export interface UpdateSitterBody {
   experience: number;
   tradeName: string;
-  petTypeIds?: number[] | null;
+  petTypeIds: number[];
   introduction?: string | null;
   services?: string | null;
   description?: string | null;

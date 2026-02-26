@@ -133,6 +133,10 @@ const SitterMiddleware = {
       return res.status(400).json({ error: "Trade name is required" });
     }
 
+    if (!petTypeIds) {
+      return res.status(400).json({ error: "Pet type IDs are required" });
+    }
+
     if (!address) {
       return res.status(400).json({ error: "Address is required" });
     }
@@ -184,6 +188,20 @@ const SitterMiddleware = {
       });
     }
 
+    if (!Array.isArray(petTypeIds)) {
+      return res.status(400).json({
+        error: "Pet type IDs must be an array",
+      });
+    }
+
+    petTypeIds.forEach((petTypeId) => {
+      if (typeof petTypeId !== "number") {
+        return res.status(400).json({
+          error: "Pet type IDs must be an array of numbers",
+        });
+      }
+    });
+
     if (typeof address !== "string") {
       return res.status(400).json({ error: "Address name must be a string" });
     }
@@ -230,22 +248,6 @@ const SitterMiddleware = {
 
     if (typeof subDistrictId !== "number") {
       return res.status(400).json({ error: "Subdistrict ID must be a number" });
-    }
-
-    if (typeof petTypeIds !== "undefined" && petTypeIds !== null) {
-      if (!Array.isArray(petTypeIds)) {
-        return res.status(400).json({
-          error: "Pet type IDs must be an array",
-        });
-      }
-
-      petTypeIds.forEach((petTypeId) => {
-        if (typeof petTypeId !== "number") {
-          return res.status(400).json({
-            error: "Pet type IDs must be an array of numbers",
-          });
-        }
-      });
     }
 
     if (typeof introduction !== "undefined" && introduction !== null) {
