@@ -1,8 +1,9 @@
-import OwnerRepository from "../repositories/owner.repository";
+import db from "../db/db";
+import { pets } from "../db/schema";
 import { PetSex } from "../types/owner";
 
-const OwnerService = {
-  // TODO image
+const OwnerRepository = {
+  // TODO
   createPet: async (
     userId: string,
     petName: string,
@@ -14,7 +15,7 @@ const OwnerService = {
     weight: number | null | undefined,
     about: string | null | undefined,
   ) => {
-    await OwnerRepository.createPet(
+    await db.insert(pets).values({
       userId,
       petName,
       petTypeId,
@@ -22,10 +23,10 @@ const OwnerService = {
       breed,
       dateOfBirth,
       color,
-      weight,
+      weight: String(weight),
       about,
-    );
+    });
   },
 };
 
-export default OwnerService;
+export default OwnerRepository;

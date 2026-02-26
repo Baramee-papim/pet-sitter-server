@@ -18,6 +18,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+export const petSex = pgEnum("pet_sex", ["Male", "Female", "Unknown"]);
 export const petSitterStatus = pgEnum("pet_sitter_status", [
   "Waiting for approval",
   "Approved",
@@ -152,6 +153,10 @@ export const users = pgTable(
     unique("users_phone_key").on(table.phone),
     unique("users_id_number_key").on(table.idNumber),
     check(
+      "users_date_of_birth_check",
+      sql`(date_of_birth IS NULL) OR (date_of_birth <= CURRENT_DATE)`,
+    ),
+    check(
       "users_id_number_format_check",
       sql`(id_number)::text ~ '^[0-9]{13}$'::text`,
     ),
@@ -191,9 +196,9 @@ export const petSitters = pgTable(
     provinceId: integer("province_id"),
     districtId: integer("district_id"),
     subDistrictId: integer("sub_district_id"),
-    status: petSitterStatus().default("Waiting for approval").notNull(),
     ratingAvg: numeric("rating_avg", { precision: 3, scale: 2 }),
     ratingBucket: integer("rating_bucket"),
+    status: petSitterStatus().default("Waiting for approval").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -265,6 +270,57 @@ export const petSitterImages = pgTable(
       foreignColumns: [petSitters.petSitterId],
       name: "pet_sitter_images_pet_sitter_id_fkey",
     }).onDelete("cascade"),
+  ],
+);
+
+export const pets = pgTable(
+  "pets",
+  {
+    petId: serial("pet_id").primaryKey().notNull(),
+    userId: uuid("user_id").notNull(),
+    petTypeId: integer("pet_type_id").notNull(),
+    petName: varchar("pet_name", { length: 50 }).notNull(),
+    sex: petSex().default("Unknown").notNull(),
+    imgUrl: text("img_url"),
+    breed: varchar({ length: 100 }),
+    dateOfBirth: date("date_of_birth"),
+    color: varchar({ length: 100 }),
+    weight: numeric({ precision: 5, scale: 2 }),
+    about: varchar({ length: 500 }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("pets_pet_type_id_idx").using(
+      "btree",
+      table.petTypeId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("pets_user_id_idx").using(
+      "btree",
+      table.userId.asc().nullsLast().op("uuid_ops"),
+    ),
+    foreignKey({
+      columns: [table.petTypeId],
+      foreignColumns: [petTypes.petTypeId],
+      name: "pets_pet_type_id_fkey",
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.userId],
+      name: "pets_user_id_fkey",
+    }).onDelete("cascade"),
+    check(
+      "pets_date_of_birth_check",
+      sql`(date_of_birth IS NULL) OR (date_of_birth <= CURRENT_DATE)`,
+    ),
+    check(
+      "pets_weight_check",
+      sql`(weight IS NULL) OR (weight > (0)::numeric)`,
+    ),
   ],
 );
 
