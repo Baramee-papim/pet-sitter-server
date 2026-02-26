@@ -6,8 +6,9 @@ export const USER_ROLES: readonly UserRole[] = ["owner", "sitter", "admin"];
 
 export interface UpdateUserBody {
   name: string;
-  email: string;
   phone: string;
-  idNumber: string;
-  dateOfBirth: string;
+  idNumber?: string | null;
+  dateOfBirth?: string | null;
+  email?: string;
+  password?: string;
 }

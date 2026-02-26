@@ -5,9 +5,9 @@ import UserService from "../services/user.service";
 import { UpdateUserBody } from "../types/user";
 
 const UserController = {
-  // TODO Email
+  // TODO image
   updateUser: async (req: Request<{}, {}, UpdateUserBody>, res: Response) => {
-    const { name, email, phone, idNumber, dateOfBirth } = req.body;
+    const { name, phone, idNumber, dateOfBirth, email, password } = req.body;
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
@@ -20,10 +20,12 @@ const UserController = {
       await UserService.updateUser(
         result.data.user.id,
         name,
-        email,
         phone,
         idNumber,
         dateOfBirth,
+        result.data.user.email!,
+        email,
+        password,
       );
     } catch (error) {
       // Client error from service

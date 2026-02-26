@@ -31,12 +31,13 @@ const UserRepository = {
     });
   },
 
+  // TODO image
   update: async (
     userId: string,
     name: string,
     phone: string,
-    idNumber: string,
-    dateOfBirth: string,
+    idNumber: string | null | undefined,
+    dateOfBirth: string | null | undefined,
   ) => {
     return await db
       .update(users)
