@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { User } from "@supabase/supabase-js";
 import UserRepository from "../repositories/user.repository";
-import supabase from "../supabase/client";
+import supabaseClient from "../supabase/client";
 import { UserRole } from "../types/user";
 
 type RequestWithUser = Request & { user?: User & { role: UserRole } };
@@ -15,7 +15,9 @@ function protect(role: UserRole, message: string) {
     }
 
     try {
-      const { data, error: authError } = await supabase.auth.getUser(token);
+      const { data, error: authError } = await supabaseClient.auth.getUser(
+        token,
+      );
 
       if (authError || !data.user) {
         return res.status(401).json({ error: "Unauthorized: Invalid token" });
