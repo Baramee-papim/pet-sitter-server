@@ -13,7 +13,7 @@ const SitterMiddleware = {
     res: Response,
     next: NextFunction,
   ) => {
-    const { sitterId } = req.params;
+    const sitterId = req.params.sitterId;
     const parsedSitterId = Number(sitterId);
 
     if (!Number.isInteger(parsedSitterId) || parsedSitterId <= 0) {
@@ -133,6 +133,10 @@ const SitterMiddleware = {
       return res.status(400).json({ error: "Trade name is required" });
     }
 
+    if (!petTypeIds) {
+      return res.status(400).json({ error: "Pet type IDs are required" });
+    }
+
     if (!address) {
       return res.status(400).json({ error: "Address is required" });
     }
@@ -162,6 +166,18 @@ const SitterMiddleware = {
       return res.status(400).json({ error: "Experience must be a number" });
     }
 
+    if (experience < 0) {
+      return res.status(400).json({
+        error: "Experience must be greater than 0",
+      });
+    }
+
+    if (experience >= 100) {
+      return res.status(400).json({
+        error: "Experience must be less than 100",
+      });
+    }
+
     if (String(experience).split(".")[1]?.length > 1) {
       return res.status(400).json({
         error: "Experience must be a multiple of 0.1",
@@ -183,6 +199,20 @@ const SitterMiddleware = {
         error: "Trade name must be less than 50 characters",
       });
     }
+
+    if (!Array.isArray(petTypeIds)) {
+      return res.status(400).json({
+        error: "Pet type IDs must be an array",
+      });
+    }
+
+    petTypeIds.forEach((petTypeId) => {
+      if (typeof petTypeId !== "number") {
+        return res.status(400).json({
+          error: "Pet type IDs must be an array of numbers",
+        });
+      }
+    });
 
     if (typeof address !== "string") {
       return res.status(400).json({ error: "Address name must be a string" });
@@ -230,22 +260,6 @@ const SitterMiddleware = {
 
     if (typeof subDistrictId !== "number") {
       return res.status(400).json({ error: "Subdistrict ID must be a number" });
-    }
-
-    if (typeof petTypeIds !== "undefined" && petTypeIds !== null) {
-      if (!Array.isArray(petTypeIds)) {
-        return res.status(400).json({
-          error: "Pet type IDs must be an array",
-        });
-      }
-
-      petTypeIds.forEach((petTypeId) => {
-        if (typeof petTypeId !== "number") {
-          return res.status(400).json({
-            error: "Pet type IDs must be an array of numbers",
-          });
-        }
-      });
     }
 
     if (typeof introduction !== "undefined" && introduction !== null) {

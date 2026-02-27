@@ -7,8 +7,9 @@ import {
   petSitterReviews,
   users,
   petSitterImages,
-  petSittersPetTypes,
   petTypes,
+  pets,
+  petSittersPetTypes,
 } from "./schema";
 
 export const districtsRelations = relations(districts, ({ one, many }) => ({
@@ -75,6 +76,7 @@ export const petSittersRelations = relations(petSitters, ({ one, many }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   petSitterReviews: many(petSitterReviews),
   petSitters: many(petSitters),
+  pets: many(pets),
 }));
 
 export const petSitterImagesRelations = relations(
@@ -86,6 +88,22 @@ export const petSitterImagesRelations = relations(
     }),
   }),
 );
+
+export const petsRelations = relations(pets, ({ one }) => ({
+  petType: one(petTypes, {
+    fields: [pets.petTypeId],
+    references: [petTypes.petTypeId],
+  }),
+  user: one(users, {
+    fields: [pets.userId],
+    references: [users.userId],
+  }),
+}));
+
+export const petTypesRelations = relations(petTypes, ({ many }) => ({
+  pets: many(pets),
+  petSittersPetTypes: many(petSittersPetTypes),
+}));
 
 export const petSittersPetTypesRelations = relations(
   petSittersPetTypes,
@@ -100,7 +118,3 @@ export const petSittersPetTypesRelations = relations(
     }),
   }),
 );
-
-export const petTypesRelations = relations(petTypes, ({ many }) => ({
-  petSittersPetTypes: many(petSittersPetTypes),
-}));

@@ -180,7 +180,7 @@ const SitterRepository = {
     sitterId: number,
     experience: number,
     tradeName: string,
-    petTypeIds: number[] | undefined | null,
+    petTypeIds: number[],
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
@@ -191,7 +191,7 @@ const SitterRepository = {
     districtId: number,
     subDistrictId: number,
   ) => {
-    return await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       await tx
         .update(petSitters)
         .set({
@@ -209,20 +209,16 @@ const SitterRepository = {
         })
         .where(eq(petSitters.petSitterId, sitterId));
 
-      if (typeof petTypeIds !== "undefined") {
-        await tx
-          .delete(petSittersPetTypes)
-          .where(eq(petSittersPetTypes.petSitterId, sitterId));
+      await tx
+        .delete(petSittersPetTypes)
+        .where(eq(petSittersPetTypes.petSitterId, sitterId));
 
-        if (petTypeIds) {
-          await tx.insert(petSittersPetTypes).values(
-            petTypeIds.map((petTypeId) => ({
-              petSitterId: sitterId,
-              petTypeId,
-            })),
-          );
-        }
-      }
+      await tx.insert(petSittersPetTypes).values(
+        petTypeIds.map((petTypeId) => ({
+          petSitterId: sitterId,
+          petTypeId,
+        })),
+      );
     });
   },
 };

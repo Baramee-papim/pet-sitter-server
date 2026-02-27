@@ -78,7 +78,7 @@ const SitterService = {
     userId: string,
     experience: number,
     tradeName: string,
-    petTypeIds: number[] | undefined | null,
+    petTypeIds: number[],
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,

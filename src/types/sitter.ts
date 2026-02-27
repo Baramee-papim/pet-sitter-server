@@ -1,4 +1,6 @@
-export interface SitterIdParams {
+import { ParamsDictionary } from "express-serve-static-core";
+
+export interface SitterIdParams extends ParamsDictionary {
   sitterId: string;
 }
 
@@ -18,7 +20,7 @@ export interface GetSittersBody {
 export interface UpdateSitterBody {
   experience: number;
   tradeName: string;
-  petTypeIds?: number[] | null;
+  petTypeIds: number[];
   introduction?: string | null;
   services?: string | null;
   description?: string | null;

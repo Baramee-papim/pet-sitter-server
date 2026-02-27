@@ -45,10 +45,7 @@ const SitterController = {
         experience,
       );
     } catch {
-      return res.status(500).json({
-        error:
-          "Server could not read the sitters because of database connection",
-      });
+      return res.status(500).json({ error: "Internal server error" });
     }
 
     const sittersResponse = {
@@ -85,10 +82,7 @@ const SitterController = {
         return res.status(error.statusCode).json({ error: error.message });
       }
 
-      return res.status(500).json({
-        error:
-          "Server could not read the sitter because of database connection",
-      });
+      return res.status(500).json({ error: "Internal server error" });
     }
 
     const sitterResponse = {
@@ -166,7 +160,7 @@ const SitterController = {
       return res.status(500).json({ error: "Internal server error" });
     }
 
-    res.status(200).json({ message: "Updated successfully" });
+    return res.status(200).json({ message: "Updated successfully" });
   },
 };
 
