@@ -1,5 +1,8 @@
+import { format } from "date-fns";
+import { UTCDate } from "@date-fns/utc";
 import AppError from "../errors/AppError";
 import PetRepository from "../repositories/pet.repository";
+import supabaseAdmin from "../supabase/admin";
 import { PetSex } from "../types/pet";
 
 const PetService = {
@@ -17,23 +20,47 @@ const PetService = {
     return result.filter((pet) => pet.pets.petId === petId)[0];
   },
 
-  // TODO image
   createPet: async (
     userId: string,
     petName: string,
     petTypeId: number,
     sex: PetSex,
-    breed: string | null | undefined,
-    dateOfBirth: string | null | undefined,
-    color: string | null | undefined,
-    weight: string | null | undefined,
+    breed: string,
+    dateOfBirth: string,
+    color: string,
+    weight: string,
     about: string | null | undefined,
+    file: Express.Multer.File,
   ) => {
+    const lookupPetTypeIds = (await PetRepository.getTypes()).map(
+      (petType) => petType.petTypeId,
+    );
+
+    if (!lookupPetTypeIds.includes(petTypeId)) {
+      throw new AppError(404, "Pet type not found");
+    }
+
+    const now = new UTCDate();
+    const fileExt = file.mimetype.split("/")[1];
+    const fileName = `${userId}/${petName}-${format(
+      now,
+      "yyyyMMddHHmmss",
+    )}.${fileExt}`;
+
+    await supabaseAdmin.storage
+      .from("pet-assets")
+      .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+    const { data } = supabaseAdmin.storage
+      .from("pet-assets")
+      .getPublicUrl(fileName);
+
     await PetRepository.create(
       userId,
       petName,
       petTypeId,
       sex,
+      data.publicUrl,
       breed,
       dateOfBirth,
       color,
@@ -42,25 +69,59 @@ const PetService = {
     );
   },
 
-  // TODO image
   updatePet: async (
     userId: string,
     petId: number,
     petName: string,
     petTypeId: number,
     sex: PetSex,
-    breed: string | null | undefined,
-    dateOfBirth: string | null | undefined,
-    color: string | null | undefined,
-    weight: string | null | undefined,
+    breed: string | undefined,
+    dateOfBirth: string | undefined,
+    color: string | undefined,
+    weight: string | undefined,
     about: string | null | undefined,
+    file: Express.Multer.File | undefined,
   ) => {
-    const lookupPetIds = (await PetRepository.getByUserId(userId)).map(
-      (pet) => pet.pets.petId,
+    const lookupPetTypeIds = (await PetRepository.getTypes()).map(
+      (petType) => petType.petTypeId,
     );
+
+    if (!lookupPetTypeIds.includes(petTypeId)) {
+      throw new AppError(404, "Pet type not found");
+    }
+
+    const lookupPets = await PetRepository.getByUserId(userId);
+    const lookupPetIds = lookupPets.map((pet) => pet.pets.petId);
 
     if (!lookupPetIds.includes(petId)) {
       throw new AppError(404, "Pet not found or not owned by this owner");
+    }
+
+    let newImgUrl: string | undefined = undefined;
+
+    if (file) {
+      const now = new UTCDate();
+      const fileExt = file.mimetype.split("/")[1];
+      const fileName = `${userId}/${petName}-${format(
+        now,
+        "yyyyMMddHHmmss",
+      )}.${fileExt}`;
+
+      await supabaseAdmin.storage
+        .from("pet-assets")
+        .upload(fileName, file.buffer, { contentType: file.mimetype });
+
+      const { data } = supabaseAdmin.storage
+        .from("pet-assets")
+        .getPublicUrl(fileName);
+
+      newImgUrl = data.publicUrl;
+
+      const oldPath = lookupPets
+        .filter((pet) => pet.pets.petId === petId)[0]
+        .pets.imgUrl.split("/pet-assets/")[1];
+
+      await supabaseAdmin.storage.from("pet-assets").remove([oldPath]);
     }
 
     await PetRepository.update(
@@ -68,6 +129,7 @@ const PetService = {
       petName,
       petTypeId,
       sex,
+      newImgUrl,
       breed,
       dateOfBirth,
       color,

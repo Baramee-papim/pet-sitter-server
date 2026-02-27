@@ -13,9 +13,9 @@ export interface PetBody {
   petName: string;
   petTypeId: number;
   sex: PetSex;
-  breed?: string | null;
-  dateOfBirth?: string | null;
-  color?: string | null;
-  weight?: number | null;
+  breed: string;
+  dateOfBirth: string;
+  color: string;
+  weight: number;
   about?: string | null;
 }

@@ -18,13 +18,23 @@ OwnerRoute.get(
 
 OwnerRoute.post(
   "/pet",
-  [PetMiddleware.petBody, ProtectMiddleware.owner],
+  [
+    UploadMiddleware.image.single("image"),
+    UploadMiddleware.requireFile("image"),
+    PetMiddleware.petBody,
+    ProtectMiddleware.owner,
+  ],
   PetController.createPet,
 );
 
 OwnerRoute.put(
   "/pet/:petId",
-  [PetMiddleware.petId, PetMiddleware.petBody, ProtectMiddleware.owner],
+  [
+    UploadMiddleware.image.single("image"),
+    PetMiddleware.petId,
+    PetMiddleware.petBody,
+    ProtectMiddleware.owner,
+  ],
   PetController.updatePet,
 );
 

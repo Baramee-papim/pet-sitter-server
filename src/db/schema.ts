@@ -281,11 +281,11 @@ export const pets = pgTable(
     petTypeId: integer("pet_type_id").notNull(),
     petName: varchar("pet_name", { length: 50 }).notNull(),
     sex: petSex().default("Unknown").notNull(),
-    imgUrl: text("img_url"),
-    breed: varchar({ length: 100 }),
-    dateOfBirth: date("date_of_birth"),
-    color: varchar({ length: 100 }),
-    weight: numeric({ precision: 5, scale: 2 }),
+    imgUrl: text("img_url").notNull(),
+    breed: varchar({ length: 100 }).notNull(),
+    dateOfBirth: date("date_of_birth").notNull(),
+    color: varchar({ length: 100 }).notNull(),
+    weight: numeric({ precision: 5, scale: 2 }).notNull(),
     about: varchar({ length: 500 }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()

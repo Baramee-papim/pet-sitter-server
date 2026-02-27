@@ -16,14 +16,21 @@ const PetMiddleware = {
     next();
   },
 
-  // TODO image
   petBody: (
-    req: Request<{}, {}, Partial<PetBody>>,
+    req: Request<{}, {}, { body: string }>,
     res: Response,
     next: NextFunction,
   ) => {
-    if (!req.body) {
+    if (!req.body?.body) {
       return res.status(400).json({ error: "Body is required" });
+    }
+
+    let body: PetBody;
+
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: "Invalid JSON body" });
     }
 
     const {
@@ -35,7 +42,7 @@ const PetMiddleware = {
       color,
       weight,
       about,
-    } = req.body;
+    } = body;
 
     // Check for required fields
     if (!petName) {
@@ -48,6 +55,22 @@ const PetMiddleware = {
 
     if (!sex) {
       return res.status(400).json({ error: "Sex is required" });
+    }
+
+    if (!breed) {
+      return res.status(400).json({ error: "Breed is required" });
+    }
+
+    if (!dateOfBirth) {
+      return res.status(400).json({ error: "Date of birth is required" });
+    }
+
+    if (!color) {
+      return res.status(400).json({ error: "Color is required" });
+    }
+
+    if (!weight) {
+      return res.status(400).json({ error: "Weight is required" });
     }
 
     // Type validations
@@ -79,77 +102,69 @@ const PetMiddleware = {
       return res.status(400).json({ error: "Invalid sex" });
     }
 
-    if (typeof breed !== "undefined" && breed !== null) {
-      if (typeof breed !== "string") {
-        return res.status(400).json({ error: "Breed must be a string" });
-      }
-
-      if (breed.length < 2) {
-        return res.status(400).json({
-          error: "Breed must be at least 2 characters long",
-        });
-      }
-
-      if (breed.length > 100) {
-        return res.status(400).json({
-          error: "Breed must be less than 100 characters long",
-        });
-      }
+    if (typeof breed !== "string") {
+      return res.status(400).json({ error: "Breed must be a string" });
     }
 
-    if (typeof dateOfBirth !== "undefined" && dateOfBirth !== null) {
-      if (!dateRegex.test(dateOfBirth)) {
-        return res.status(400).json({ error: "Invalid date of birth" });
-      }
-
-      const date = new Date(dateOfBirth);
-      if (Number.isNaN(date.getTime())) {
-        return res.status(400).json({ error: "Invalid date of birth" });
-      }
-
-      if (date > new Date()) {
-        return res.status(400).json({
-          error: "Date of birth must be in the past",
-        });
-      }
+    if (breed.length < 2) {
+      return res.status(400).json({
+        error: "Breed must be at least 2 characters long",
+      });
     }
 
-    if (typeof color !== "undefined" && color !== null) {
-      if (typeof color !== "string") {
-        return res.status(400).json({ error: "Color must be a string" });
-      }
-
-      if (color.length < 2) {
-        return res.status(400).json({
-          error: "Color must be at least 2 characters long",
-        });
-      }
-
-      if (color.length > 100) {
-        return res.status(400).json({
-          error: "Color must be less than 100 characters long",
-        });
-      }
+    if (breed.length > 100) {
+      return res.status(400).json({
+        error: "Breed must be less than 100 characters long",
+      });
     }
 
-    if (typeof weight !== "undefined" && weight !== null) {
-      if (typeof weight !== "number") {
-        return res.status(400).json({ error: "Weight must be a number" });
-      }
+    if (!dateRegex.test(dateOfBirth)) {
+      return res.status(400).json({ error: "Invalid date of birth" });
+    }
 
-      if (weight < 0) {
-        return res.status(400).json({ error: "Weight must be greater than 0" });
-      }
+    const date = new Date(dateOfBirth);
+    if (Number.isNaN(date.getTime())) {
+      return res.status(400).json({ error: "Invalid date of birth" });
+    }
 
-      if (weight >= 1000) {
-        return res.status(400).json({ error: "Weight must be less than 1000" });
-      }
+    if (date > new Date()) {
+      return res.status(400).json({
+        error: "Date of birth must be in the past",
+      });
+    }
 
-      if (String(weight).split(".")[1]?.length > 2) {
-        return res.status(400).json({
-          error: "Weight must be a multiple of 0.01",
-        });
-      }
+    if (typeof color !== "string") {
+      return res.status(400).json({ error: "Color must be a string" });
+    }
+
+    if (color.length < 2) {
+      return res.status(400).json({
+        error: "Color must be at least 2 characters long",
+      });
+    }
+
+    if (color.length > 100) {
+      return res.status(400).json({
+        error: "Color must be less than 100 characters long",
+      });
+    }
+
+    if (typeof weight !== "number") {
+      return res.status(400).json({ error: "Weight must be a number" });
+    }
+
+    if (weight < 0) {
+      return res.status(400).json({ error: "Weight must be greater than 0" });
+    }
+
+    if (weight >= 1000) {
+      return res.status(400).json({ error: "Weight must be less than 1000" });
+    }
+
+    if (String(weight).split(".")[1]?.length > 2) {
+      return res.status(400).json({
+        error: "Weight must be a multiple of 0.01",
+      });
     }
 
     if (typeof about !== "undefined" && about !== null) {
