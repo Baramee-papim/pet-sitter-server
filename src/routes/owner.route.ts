@@ -3,6 +3,7 @@ import PetController from "../controllers/pet.controller";
 import UserController from "../controllers/user.controller";
 import PetMiddleware from "../middlewares/pet.middleware";
 import ProtectMiddleware from "../middlewares/protect.middleware";
+import UploadMiddleware from "../middlewares/upload.middleware";
 import UserMiddleware from "../middlewares/user.middleware";
 
 const OwnerRoute = Router();
@@ -29,7 +30,11 @@ OwnerRoute.put(
 
 OwnerRoute.put(
   "/user",
-  [UserMiddleware.updateUserBody, ProtectMiddleware.owner],
+  [
+    UploadMiddleware.image.single("image"),
+    UserMiddleware.updateUserBody,
+    ProtectMiddleware.owner,
+  ],
   UserController.updateUser,
 );
 

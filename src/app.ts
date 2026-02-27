@@ -1,6 +1,6 @@
 import "dotenv/config";
 import cors from "cors";
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import AuthRoute from "./routes/auth.route";
 import OwnerRoute from "./routes/owner.route";
 import SitterRoute from "./routes/sitter.route";
@@ -30,6 +30,16 @@ app.get("/health", (req, res) => {
 app.use("/auth", AuthRoute);
 app.use("/pet-owner", OwnerRoute);
 app.use("/pet-sitter", SitterRoute);
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err) {
+    const status = err.status || 500;
+    return res.status(status).json({
+      error: err.message || "Something went wrong",
+    });
+  }
+  next();
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
