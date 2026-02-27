@@ -7,6 +7,14 @@ import UserMiddleware from "../middlewares/user.middleware";
 
 const OwnerRoute = Router();
 
+OwnerRoute.get("/pet", [ProtectMiddleware.owner], PetController.getPets);
+
+OwnerRoute.get(
+  "/pet/:petId",
+  [PetMiddleware.petId, ProtectMiddleware.owner],
+  PetController.getPetById,
+);
+
 OwnerRoute.post(
   "/pet",
   [PetMiddleware.petBody, ProtectMiddleware.owner],

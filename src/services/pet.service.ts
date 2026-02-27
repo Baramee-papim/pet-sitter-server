@@ -3,6 +3,20 @@ import PetRepository from "../repositories/pet.repository";
 import { PetSex } from "../types/pet";
 
 const PetService = {
+  getPetsByUserId: async (userId: string) => {
+    return await PetRepository.getByUserId(userId);
+  },
+
+  getPetById: async (userId: string, petId: number) => {
+    const result = await PetRepository.getByUserId(userId);
+
+    if (!result.map((pet) => pet.pets.petId).includes(petId)) {
+      throw new AppError(404, "Pet not found or not owned by this owner");
+    }
+
+    return result.filter((pet) => pet.pets.petId === petId)[0];
+  },
+
   // TODO image
   createPet: async (
     userId: string,
@@ -12,7 +26,7 @@ const PetService = {
     breed: string | null | undefined,
     dateOfBirth: string | null | undefined,
     color: string | null | undefined,
-    weight: number | null | undefined,
+    weight: string | null | undefined,
     about: string | null | undefined,
   ) => {
     await PetRepository.create(
@@ -38,11 +52,11 @@ const PetService = {
     breed: string | null | undefined,
     dateOfBirth: string | null | undefined,
     color: string | null | undefined,
-    weight: number | null | undefined,
+    weight: string | null | undefined,
     about: string | null | undefined,
   ) => {
     const lookupPetIds = (await PetRepository.getByUserId(userId)).map(
-      (pet) => pet.petId,
+      (pet) => pet.pets.petId,
     );
 
     if (!lookupPetIds.includes(petId)) {
@@ -64,7 +78,7 @@ const PetService = {
 
   deletePet: async (userId: string, petId: number) => {
     const lookupPetIds = (await PetRepository.getByUserId(userId)).map(
-      (pet) => pet.petId,
+      (pet) => pet.pets.petId,
     );
 
     if (!lookupPetIds.includes(petId)) {

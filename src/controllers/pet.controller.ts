@@ -5,6 +5,75 @@ import PetService from "../services/pet.service";
 import { PetBody, PetIdParams } from "../types/pet";
 
 const PetController = {
+  getPets: async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.split(" ")[1];
+    let result;
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
+    try {
+      const user = await AuthService.getUser(token);
+
+      result = await PetService.getPetsByUserId(user.data.user.id);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const petsResponse = result.map((pet) => ({
+      id: pet.pets.petId,
+      imgUrl: pet.pets.imgUrl,
+      petName: pet.pets.petName,
+      petType: pet.pet_types.name,
+    }));
+
+    return res.status(200).json(petsResponse);
+  },
+
+  getPetById: async (req: Request<PetIdParams>, res: Response) => {
+    const petId = Number(req.params.petId);
+    const token = req.headers.authorization?.split(" ")[1];
+    let result;
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
+    try {
+      const user = await AuthService.getUser(token);
+
+      result = await PetService.getPetById(user.data.user.id, petId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const petResponse = {
+      id: result.pets.petId,
+      imgUrl: result.pets.imgUrl,
+      petName: result.pets.petName,
+      petType: result.pet_types.name,
+      sex: result.pets.sex,
+      breed: result.pets.breed,
+      dateOfBirth: result.pets.dateOfBirth,
+      color: result.pets.color,
+      weight: result.pets.weight,
+      about: result.pets.about,
+    };
+
+    return res.status(200).json(petResponse);
+  },
+
   // TODO image
   createPet: async (req: Request<{}, {}, PetBody>, res: Response) => {
     const {
@@ -24,18 +93,18 @@ const PetController = {
     }
 
     try {
-      const result = await AuthService.getUser(token);
+      const user = await AuthService.getUser(token);
 
       await PetService.createPet(
-        result.data.user.id,
-        petName,
+        user.data.user.id,
+        petName.trim(),
         petTypeId,
         sex,
-        breed,
+        breed ? breed.trim() : breed,
         dateOfBirth,
-        color,
-        weight,
-        about,
+        color ? color.trim() : color,
+        typeof weight === "number" ? String(weight) : weight,
+        about ? about.trim() : about,
       );
     } catch {
       return res.status(500).json({ error: "Internal server error" });
@@ -64,19 +133,19 @@ const PetController = {
     }
 
     try {
-      const result = await AuthService.getUser(token);
+      const user = await AuthService.getUser(token);
 
       await PetService.updatePet(
-        result.data.user.id,
+        user.data.user.id,
         petId,
-        petName,
+        petName.trim(),
         petTypeId,
         sex,
-        breed,
+        breed ? breed.trim() : breed,
         dateOfBirth,
-        color,
-        weight,
-        about,
+        color ? color.trim() : color,
+        typeof weight === "number" ? String(weight) : weight,
+        about ? about.trim() : about,
       );
     } catch (error) {
       // Client error from service
@@ -99,9 +168,9 @@ const PetController = {
     }
 
     try {
-      const result = await AuthService.getUser(token);
+      const user = await AuthService.getUser(token);
 
-      await PetService.deletePet(result.data.user.id, petId);
+      await PetService.deletePet(user.data.user.id, petId);
     } catch (error) {
       // Client error from service
       if (error instanceof AppError) {

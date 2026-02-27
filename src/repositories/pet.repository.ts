@@ -1,11 +1,16 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import db from "../db/db";
-import { pets } from "../db/schema";
+import { pets, petTypes } from "../db/schema";
 import { PetSex } from "../types/pet";
 
 const PetRepository = {
   getByUserId: async (userId: string) => {
-    return db.select().from(pets).where(eq(pets.userId, userId));
+    return db
+      .select()
+      .from(pets)
+      .innerJoin(petTypes, eq(petTypes.petTypeId, pets.petTypeId))
+      .where(eq(pets.userId, userId))
+      .orderBy(asc(pets.petId));
   },
 
   // TODO image
@@ -17,7 +22,7 @@ const PetRepository = {
     breed: string | null | undefined,
     dateOfBirth: string | null | undefined,
     color: string | null | undefined,
-    weight: number | null | undefined,
+    weight: string | null | undefined,
     about: string | null | undefined,
   ) => {
     await db.insert(pets).values({
@@ -28,7 +33,7 @@ const PetRepository = {
       breed,
       dateOfBirth,
       color,
-      weight: String(weight),
+      weight,
       about,
     });
   },
@@ -42,7 +47,7 @@ const PetRepository = {
     breed: string | null | undefined,
     dateOfBirth: string | null | undefined,
     color: string | null | undefined,
-    weight: number | null | undefined,
+    weight: string | null | undefined,
     about: string | null | undefined,
   ) => {
     await db
@@ -54,12 +59,13 @@ const PetRepository = {
         breed,
         dateOfBirth,
         color,
-        weight: String(weight),
+        weight,
         about,
       })
       .where(eq(pets.petId, petId));
   },
 
+  // TODO image
   delete: async (petId: number) => {
     await db.delete(pets).where(eq(pets.petId, petId));
   },
