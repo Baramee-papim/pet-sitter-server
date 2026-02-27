@@ -71,7 +71,6 @@ const PetRepository = {
       .where(eq(pets.petId, petId));
   },
 
-  // TODO image
   delete: async (petId: number) => {
     await db.delete(pets).where(eq(pets.petId, petId));
   },

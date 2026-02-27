@@ -139,13 +139,18 @@ const PetService = {
   },
 
   deletePet: async (userId: string, petId: number) => {
-    const lookupPetIds = (await PetRepository.getByUserId(userId)).map(
-      (pet) => pet.pets.petId,
-    );
+    const lookupPets = await PetRepository.getByUserId(userId);
+    const lookupPetIds = lookupPets.map((pet) => pet.pets.petId);
 
     if (!lookupPetIds.includes(petId)) {
       throw new AppError(404, "Pet not found or not owned by this owner");
     }
+
+    const oldPath = lookupPets
+      .filter((pet) => pet.pets.petId === petId)[0]
+      .pets.imgUrl.split("/pet-assets/")[1];
+
+    await supabaseAdmin.storage.from("pet-assets").remove([oldPath]);
 
     await PetRepository.delete(petId);
   },
