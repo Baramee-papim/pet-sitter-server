@@ -3,7 +3,6 @@ import AppError from "../errors/AppError";
 import AuthService from "../services/auth.service";
 import SitterService from "../services/sitter.service";
 import {
-  GetSittersBody,
   GetSittersQuery,
   SitterIdParams,
   UpdateSitterBody,
@@ -11,10 +10,10 @@ import {
 
 const SitterController = {
   getSitters: async (
-    req: Request<{}, {}, GetSittersBody, GetSittersQuery>,
+    req: Request<{}, {}, {}, GetSittersQuery>,
     res: Response,
   ) => {
-    const seed = req.body.seed;
+    const seed = req.query.seed || "Any123";
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
     const keyword = req.query.keyword ? req.query.keyword.trim() : null;

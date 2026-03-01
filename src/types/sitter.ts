@@ -11,6 +11,7 @@ export interface GetSittersQuery {
   pet_type?: string;
   rating?: string;
   experience?: string;
+  seed?:string;
 }
 
 export interface GetSittersBody {

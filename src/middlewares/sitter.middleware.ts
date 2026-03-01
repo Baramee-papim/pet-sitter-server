@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  GetSittersBody,
   GetSittersQuery,
   SitterIdParams,
   UpdateSitterBody,
@@ -26,16 +25,15 @@ const SitterMiddleware = {
   },
 
   getSittersQuery: (
-    req: Request<{}, {}, Partial<GetSittersBody>, GetSittersQuery>,
+    req: Request<{}, {}, {}, GetSittersQuery>,
     res: Response,
     next: NextFunction,
   ) => {
-    if (!req.body) {
-      return res.status(400).json({ error: "Body is required" });
-    }
-
-    const { seed } = req.body;
-
+    // if (!req.body) {
+    //   return res.status(400).json({ error: "Body is required" });
+    // }
+    const seed = req.query.seed;
+    console.log(seed);
     if (!seed) {
       return res.status(400).json({ error: "Seed is required" });
     }
