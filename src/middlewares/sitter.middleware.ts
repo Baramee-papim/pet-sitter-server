@@ -29,9 +29,7 @@ const SitterMiddleware = {
     res: Response,
     next: NextFunction,
   ) => {
-
     const seed = req.query.seed;
-    console.log(seed);
     if (!seed) {
       return res.status(400).json({ error: "Seed is required" });
     }
