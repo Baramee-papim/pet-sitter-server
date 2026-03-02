@@ -99,7 +99,6 @@ const SitterRepository = {
       with: {
         user: { columns: { name: true, profileImgUrl: true } },
         petSitterImages: { columns: { imgUrl: true } },
-        petSitterReviews: { columns: { rating: true } },
         province: { columns: { name: true } },
         district: { columns: { name: true } },
         petSittersPetTypes: {
@@ -139,6 +138,7 @@ const SitterRepository = {
         address: true,
         latitude: true,
         longitude: true,
+        reviewCount: true,
         ratingAvg: true,
       },
       with: {
@@ -147,7 +147,6 @@ const SitterRepository = {
           columns: { imgUrl: true },
           orderBy: [asc(petSitterImages.imgUrl)],
         },
-        petSitterReviews: { columns: { rating: true } },
         province: { columns: { name: true } },
         district: { columns: { name: true } },
         subDistrict: { columns: { name: true, postCode: true } },

@@ -91,6 +91,7 @@ const SitterController = {
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
       experience: result.experience,
+      reviewCount: result.reviewCount,
       rating: result.ratingAvg,
       petTypes: result.petTypes,
       introduction: result.introduction,

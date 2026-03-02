@@ -2,30 +2,98 @@ import {
   pgTable,
   index,
   foreignKey,
-  pgPolicy,
-  integer,
-  varchar,
   check,
   serial,
   uuid,
+  integer,
+  varchar,
   text,
   timestamp,
+  numeric,
+  pgPolicy,
   unique,
   date,
-  numeric,
   primaryKey,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+export const bookingStatus = pgEnum("booking_status", [
+  "Waiting for confirm",
+  "Waiting for service",
+  "In service",
+  "Success",
+  "Canceled",
+]);
 export const petSex = pgEnum("pet_sex", ["Male", "Female", "Unknown"]);
 export const petSitterStatus = pgEnum("pet_sitter_status", [
   "Waiting for approval",
   "Approved",
   "Rejected",
 ]);
+export const reportStatus = pgEnum("report_status", [
+  "New Report",
+  "Pending",
+  "Resolved",
+  "Canceled",
+]);
 export const userRole = pgEnum("user_role", ["owner", "sitter", "admin"]);
 export const userStatus = pgEnum("user_status", ["Normal", "Banned"]);
+
+export const bookings = pgTable(
+  "bookings",
+  {
+    bookingId: serial("booking_id").primaryKey().notNull(),
+    petOwnerId: uuid("pet_owner_id").notNull(),
+    petSitterId: integer("pet_sitter_id").notNull(),
+    contactName: varchar("contact_name", { length: 100 }).notNull(),
+    contactEmail: text("contact_email").notNull(),
+    contactPhone: varchar("contact_phone", { length: 10 }).notNull(),
+    startTime: timestamp("start_time", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+    endTime: timestamp("end_time", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+    totalPrice: numeric("total_price", { precision: 7, scale: 2 }).notNull(),
+    status: bookingStatus().default("Waiting for confirm").notNull(),
+    note: text(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("bookings_pet_owner_id_idx").using(
+      "btree",
+      table.petOwnerId.asc().nullsLast().op("uuid_ops"),
+    ),
+    index("bookings_pet_sitter_id_idx").using(
+      "btree",
+      table.petSitterId.asc().nullsLast().op("int4_ops"),
+    ),
+    foreignKey({
+      columns: [table.petOwnerId],
+      foreignColumns: [users.userId],
+      name: "bookings_pet_owner_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.petSitterId],
+      foreignColumns: [petSitters.petSitterId],
+      name: "bookings_pet_sitter_id_fkey",
+    }).onDelete("cascade"),
+    check(
+      "bookings_contact_phone_format_check",
+      sql`(contact_phone)::text ~ '^0[1-9]{1}[0-9]{8}$'::text`,
+    ),
+    check("bookings_time_check", sql`end_time > start_time`),
+    check("bookings_total_price_check", sql`total_price >= (0)::numeric`),
+  ],
+);
 
 export const districts = pgTable(
   "districts",
@@ -96,44 +164,6 @@ export const subDistricts = pgTable(
   ],
 );
 
-export const petSitterReviews = pgTable(
-  "pet_sitter_reviews",
-  {
-    petSitterReviewId: serial("pet_sitter_review_id").primaryKey().notNull(),
-    petSitterId: integer("pet_sitter_id").notNull(),
-    userId: uuid("user_id").notNull(),
-    rating: integer().notNull(),
-    comment: text().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    index("pet_sitter_reviews_pet_sitter_id_idx").using(
-      "btree",
-      table.petSitterId.asc().nullsLast().op("int4_ops"),
-    ),
-    index("pet_sitter_reviews_user_id_idx").using(
-      "btree",
-      table.userId.asc().nullsLast().op("uuid_ops"),
-    ),
-    foreignKey({
-      columns: [table.petSitterId],
-      foreignColumns: [petSitters.petSitterId],
-      name: "pet_sitter_reviews_pet_sitter_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [users.userId],
-      name: "pet_sitter_reviews_user_id_fkey",
-    }).onDelete("cascade"),
-    check(
-      "pet_sitter_reviews_rating_check",
-      sql`rating = ANY (ARRAY[1, 2, 3, 4, 5])`,
-    ),
-  ],
-);
-
 export const users = pgTable(
   "users",
   {
@@ -159,6 +189,10 @@ export const users = pgTable(
     check(
       "users_id_number_format_check",
       sql`(id_number)::text ~ '^[0-9]{13}$'::text`,
+    ),
+    check(
+      "users_phone_format_check",
+      sql`(phone)::text ~ '^0[1-9]{1}[0-9]{8}$'::text`,
     ),
   ],
 );
@@ -196,8 +230,12 @@ export const petSitters = pgTable(
     provinceId: integer("province_id"),
     districtId: integer("district_id"),
     subDistrictId: integer("sub_district_id"),
+    reviewCount: integer("review_count").default(0),
+    ratingSum: integer("rating_sum").default(0),
     ratingAvg: numeric("rating_avg", { precision: 3, scale: 2 }),
     ratingBucket: integer("rating_bucket"),
+    bankId: integer("bank_id"),
+    accountNumber: varchar("account_number", { length: 30 }),
     status: petSitterStatus().default("Waiting for approval").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
@@ -212,14 +250,15 @@ export const petSitters = pgTable(
       "btree",
       table.provinceId.asc().nullsLast().op("int4_ops"),
     ),
-    index("pet_sitters_rating_bucket_idx").using(
-      "btree",
-      table.ratingBucket.asc().nullsLast().op("int4_ops"),
-    ),
     index("pet_sitters_sub_district_id_idx").using(
       "btree",
       table.subDistrictId.asc().nullsLast().op("int4_ops"),
     ),
+    foreignKey({
+      columns: [table.bankId],
+      foreignColumns: [banks.bankId],
+      name: "pet_sitters_bank_id_fkey",
+    }).onDelete("set null"),
     foreignKey({
       columns: [table.districtId],
       foreignColumns: [districts.districtId],
@@ -243,13 +282,39 @@ export const petSitters = pgTable(
     unique("pet_sitters_user_id_key").on(table.userId),
     unique("pet_sitters_trade_name_key").on(table.tradeName),
     check(
+      "pet_sitters_experience_check",
+      sql`(experience IS NULL) OR (experience > (0)::numeric)`,
+    ),
+    check(
       "pet_sitters_rating_avg_check",
       sql`(rating_avg IS NULL) OR ((rating_avg >= (1)::numeric) AND (rating_avg <= (5)::numeric))`,
     ),
     check(
       "pet_sitters_rating_bucket_check",
-      sql`(rating_bucket IS NULL) OR (rating_bucket = ANY (ARRAY[1, 2, 3, 4, 5]))`,
+      sql`(rating_bucket IS NULL) OR ((rating_bucket >= 1) AND (rating_bucket <= 5))`,
     ),
+  ],
+);
+
+export const reviews = pgTable(
+  "reviews",
+  {
+    reviewId: serial("review_id").primaryKey().notNull(),
+    bookingId: integer("booking_id").notNull(),
+    rating: integer().notNull(),
+    comment: text().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.bookingId],
+      foreignColumns: [bookings.bookingId],
+      name: "reviews_booking_id_fkey",
+    }).onDelete("cascade"),
+    unique("reviews_booking_id_key").on(table.bookingId),
+    check("reviews_rating_check", sql`(rating >= 1) AND (rating <= 5)`),
   ],
 );
 
@@ -270,6 +335,23 @@ export const petSitterImages = pgTable(
       foreignColumns: [petSitters.petSitterId],
       name: "pet_sitter_images_pet_sitter_id_fkey",
     }).onDelete("cascade"),
+  ],
+);
+
+export const banks = pgTable(
+  "banks",
+  {
+    bankId: serial("bank_id").primaryKey().notNull(),
+    name: varchar({ length: 150 }).notNull(),
+  },
+  (table) => [
+    unique("banks_name_key").on(table.name),
+    pgPolicy("Enable read access for all users", {
+      as: "permissive",
+      for: "select",
+      to: ["public"],
+      using: sql`true`,
+    }),
   ],
 );
 
