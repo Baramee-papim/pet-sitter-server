@@ -29,9 +29,7 @@ const SitterMiddleware = {
     res: Response,
     next: NextFunction,
   ) => {
-    // if (!req.body) {
-    //   return res.status(400).json({ error: "Body is required" });
-    // }
+
     const seed = req.query.seed;
     console.log(seed);
     if (!seed) {

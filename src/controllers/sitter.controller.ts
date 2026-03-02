@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import AuthService from "../services/auth.service";
@@ -13,7 +14,7 @@ const SitterController = {
     req: Request<{}, {}, {}, GetSittersQuery>,
     res: Response,
   ) => {
-    const seed = req.query.seed || "Any123";
+    const seed = req.query.seed || format(new Date(), "yyyyMMddHHmmss");
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
     const keyword = req.query.keyword ? req.query.keyword.trim() : null;

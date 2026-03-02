@@ -14,9 +14,7 @@ export interface GetSittersQuery {
   seed?:string;
 }
 
-export interface GetSittersBody {
-  seed: string;
-}
+
 
 export interface UpdateSitterBody {
   experience: number;
