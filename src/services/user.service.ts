@@ -77,7 +77,9 @@ const UserService = {
       );
 
       if (user.profileImgUrl && (publicUrl || removeProfileImg)) {
-        await supabaseAdmin.storage.from(bucket).remove([user.profileImgUrl]);
+        await supabaseAdmin.storage
+          .from(bucket)
+          .remove([user.profileImgUrl.split(`/${bucket}/`)[1]]);
       }
     } catch (error) {
       // Rollback

@@ -162,7 +162,9 @@ const PetService = {
       );
 
       if (publicUrl) {
-        await supabaseAdmin.storage.from(bucket).remove([pet.pets.imgUrl]);
+        await supabaseAdmin.storage
+          .from(bucket)
+          .remove([pet.pets.imgUrl.split(`/${bucket}/`)[1]]);
       }
     } catch (error) {
       // Rollback
@@ -185,7 +187,9 @@ const PetService = {
     await supabaseAdmin.storage
       .from(bucket)
       .remove([
-        lookupPets.filter((pet) => pet.pets.petId === petId)[0].pets.imgUrl,
+        lookupPets
+          .filter((pet) => pet.pets.petId === petId)[0]
+          .pets.imgUrl.split(`/${bucket}/`)[1],
       ]);
 
     await PetRepository.delete(petId);

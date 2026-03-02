@@ -118,7 +118,7 @@ const SitterService = {
       throw new AppError(400, "Sitter with this trade name already exists");
     }
 
-    const uploadedPaths: string[] = [];
+    const filePaths: string[] = [];
 
     try {
       const now = new UTCDate();
@@ -142,10 +142,10 @@ const SitterService = {
           throw error;
         }
 
-        uploadedPaths.push(filePath);
+        filePaths.push(filePath);
       }
 
-      uploadedPaths.forEach((path) => {
+      filePaths.forEach((path) => {
         const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
         publicUrls.push(data.publicUrl);
       });
@@ -172,12 +172,16 @@ const SitterService = {
       if (sitter.petSitterImages.length) {
         await supabaseAdmin.storage
           .from(bucket)
-          .remove(sitter.petSitterImages.map((image) => image.imgUrl));
+          .remove(
+            sitter.petSitterImages.map(
+              (image) => image.imgUrl.split(`/${bucket}/`)[1],
+            ),
+          );
       }
     } catch (error) {
       // Rollback
-      if (uploadedPaths.length) {
-        await supabaseAdmin.storage.from(bucket).remove(uploadedPaths);
+      if (filePaths.length) {
+        await supabaseAdmin.storage.from(bucket).remove(filePaths);
       }
 
       throw error;
