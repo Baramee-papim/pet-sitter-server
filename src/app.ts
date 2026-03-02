@@ -14,6 +14,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000", // Frontend local (Next.js)
+      "https://pet-sitter-app-two.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
