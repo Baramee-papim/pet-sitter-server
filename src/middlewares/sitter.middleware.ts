@@ -29,15 +29,6 @@ const SitterMiddleware = {
     res: Response,
     next: NextFunction,
   ) => {
-    const seed = req.query.seed;
-    if (!seed) {
-      return res.status(400).json({ error: "Seed is required" });
-    }
-
-    if (typeof seed !== "string") {
-      return res.status(400).json({ error: "Seed must be a string" });
-    }
-
     const { page, limit, pet_type, rating, experience } = req.query;
     const parsedPage = Number(page);
     const parsedlimit = Number(limit);

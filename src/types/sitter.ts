@@ -11,10 +11,8 @@ export interface GetSittersQuery {
   pet_type?: string;
   rating?: string;
   experience?: string;
-  seed?:string;
+  seed?: string;
 }
-
-
 
 export interface UpdateSitterBody {
   experience: number;

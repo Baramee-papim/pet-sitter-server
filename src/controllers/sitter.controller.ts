@@ -14,12 +14,12 @@ const SitterController = {
     req: Request<{}, {}, {}, GetSittersQuery>,
     res: Response,
   ) => {
-    const seed = req.query.seed || format(new Date(), "yyyyMMddHHmmss");
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
     const keyword = req.query.keyword ? req.query.keyword.trim() : null;
     const petType = req.query.pet_type ? req.query.pet_type.split(",") : null;
     const rating = Number(req.query.rating) || null;
+    const seed = req.query.seed || format(new Date(), "yyyyMMdd");
     let experience: number[] | null;
     let result;
 
