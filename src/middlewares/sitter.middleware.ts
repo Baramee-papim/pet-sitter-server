@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  GetSittersBody,
   GetSittersQuery,
   SitterIdParams,
   UpdateSitterBody,
@@ -26,24 +25,10 @@ const SitterMiddleware = {
   },
 
   getSittersQuery: (
-    req: Request<{}, {}, Partial<GetSittersBody>, GetSittersQuery>,
+    req: Request<{}, {}, {}, GetSittersQuery>,
     res: Response,
     next: NextFunction,
   ) => {
-    if (!req.body) {
-      return res.status(400).json({ error: "Body is required" });
-    }
-
-    const { seed } = req.body;
-
-    if (!seed) {
-      return res.status(400).json({ error: "Seed is required" });
-    }
-
-    if (typeof seed !== "string") {
-      return res.status(400).json({ error: "Seed must be a string" });
-    }
-
     const { page, limit, pet_type, rating, experience } = req.query;
     const parsedPage = Number(page);
     const parsedlimit = Number(limit);
@@ -99,14 +84,21 @@ const SitterMiddleware = {
     next();
   },
 
-  // TODO image
   updateSitterBody: (
-    req: Request<{}, {}, Partial<UpdateSitterBody>>,
+    req: Request<{}, {}, { body: string }>,
     res: Response,
     next: NextFunction,
   ) => {
-    if (!req.body) {
+    if (!req.body?.body) {
       return res.status(400).json({ error: "Body is required" });
+    }
+
+    let body: UpdateSitterBody;
+
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: "Invalid JSON body" });
     }
 
     const {
@@ -122,7 +114,7 @@ const SitterMiddleware = {
       provinceId,
       districtId,
       subDistrictId,
-    } = req.body;
+    } = body;
 
     // Check for required fields
     if (!experience) {

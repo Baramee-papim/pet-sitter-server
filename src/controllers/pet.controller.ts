@@ -74,8 +74,9 @@ const PetController = {
     return res.status(200).json(petResponse);
   },
 
-  // TODO image
-  createPet: async (req: Request<{}, {}, PetBody>, res: Response) => {
+  createPet: async (req: Request<{}, {}, { body: string }>, res: Response) => {
+    const file = req.file!;
+    const body: PetBody = JSON.parse(req.body.body);
     const {
       petName,
       petTypeId,
@@ -85,7 +86,7 @@ const PetController = {
       color,
       weight,
       about,
-    } = req.body;
+    } = body;
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
@@ -100,22 +101,32 @@ const PetController = {
         petName.trim(),
         petTypeId,
         sex,
-        breed ? breed.trim() : breed,
+        breed.trim(),
         dateOfBirth,
-        color ? color.trim() : color,
-        typeof weight === "number" ? String(weight) : weight,
+        color.trim(),
+        String(weight),
         about ? about.trim() : about,
+        file,
       );
-    } catch {
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
       return res.status(500).json({ error: "Internal server error" });
     }
 
     return res.status(201).json({ message: "Pet created successfully" });
   },
 
-  // TODO image
-  updatePet: async (req: Request<PetIdParams, {}, PetBody>, res: Response) => {
+  updatePet: async (
+    req: Request<PetIdParams, {}, { body: string }>,
+    res: Response,
+  ) => {
+    const file = req.file!;
     const petId = Number(req.params.petId);
+    const body: PetBody = JSON.parse(req.body.body);
     const {
       petName,
       petTypeId,
@@ -125,7 +136,7 @@ const PetController = {
       color,
       weight,
       about,
-    } = req.body;
+    } = body;
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
@@ -141,11 +152,12 @@ const PetController = {
         petName.trim(),
         petTypeId,
         sex,
-        breed ? breed.trim() : breed,
+        breed.trim(),
         dateOfBirth,
-        color ? color.trim() : color,
-        typeof weight === "number" ? String(weight) : weight,
+        color.trim(),
+        String(weight),
         about ? about.trim() : about,
+        file,
       );
     } catch (error) {
       // Client error from service
