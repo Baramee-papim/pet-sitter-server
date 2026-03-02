@@ -5,6 +5,8 @@ import UserRepository from "../repositories/user.repository";
 import supabaseAdmin from "../supabase/admin";
 import AuthService from "./auth.service";
 
+const bucket = "user-assets";
+
 const UserService = {
   updateUser: async (
     userId: string,
@@ -19,18 +21,17 @@ const UserService = {
     removeProfileImg: boolean,
   ) => {
     const lookupUser = {
-      user: (await UserRepository.getById(userId))[0],
-      phone: (await UserRepository.getByPhone(phone))[0],
-      idNumber: idNumber
-        ? (await UserRepository.getByIdNumber(idNumber))[0]
+      byPhone: await UserRepository.getByPhone(phone),
+      byIdNumber: idNumber
+        ? await UserRepository.getByIdNumber(idNumber)
         : null,
     };
 
-    if (lookupUser.phone && lookupUser.phone.userId !== userId) {
+    if (lookupUser.byPhone && lookupUser.byPhone.userId !== userId) {
       throw new AppError(400, "User with this phone number already exists");
     }
 
-    if (lookupUser.idNumber && lookupUser.idNumber.userId !== userId) {
+    if (lookupUser.byIdNumber && lookupUser.byIdNumber.userId !== userId) {
       throw new AppError(400, "User with this ID number already exists");
     }
 
@@ -38,48 +39,54 @@ const UserService = {
       await AuthService.changeEmail(oldEmail, newEmail, password);
     }
 
-    let newImgUrl: string | null | undefined = undefined;
+    let filePath: string | undefined;
 
-    // Only remove profile image
-    if (removeProfileImg && lookupUser.user.profileImgUrl) {
-      const oldPath = lookupUser.user.profileImgUrl.split("/user-assets/")[1];
+    try {
+      // Upload profile image
+      let publicUrl: string | null | undefined;
 
-      await supabaseAdmin.storage.from("user-assets").remove([oldPath]);
+      if (file) {
+        const now = new UTCDate();
+        const fileExt = file.mimetype.split("/")[1];
+        filePath = `${userId}-${format(now, "yyyyMMddHHmmss")}.${fileExt}`;
 
-      newImgUrl = null;
-    }
+        const { error } = await supabaseAdmin.storage
+          .from(bucket)
+          .upload(filePath, file.buffer, { contentType: file.mimetype });
 
-    // Upload new profile image
-    if (file) {
-      const now = new UTCDate();
-      const fileExt = file.mimetype.split("/")[1];
-      const fileName = `${userId}-${format(now, "yyyyMMddHHmmss")}.${fileExt}`;
+        if (error) {
+          throw error;
+        }
 
-      await supabaseAdmin.storage
-        .from("user-assets")
-        .upload(fileName, file.buffer, { contentType: file.mimetype });
+        const { data } = supabaseAdmin.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
 
-      const { data } = supabaseAdmin.storage
-        .from("user-assets")
-        .getPublicUrl(fileName);
-
-      newImgUrl = data.publicUrl;
-
-      if (lookupUser.user.profileImgUrl) {
-        const oldPath = lookupUser.user.profileImgUrl.split("/user-assets/")[1];
-
-        await supabaseAdmin.storage.from("user-assets").remove([oldPath]);
+        publicUrl = data.publicUrl;
       }
-    }
 
-    await UserRepository.update(
-      userId,
-      name,
-      phone,
-      newImgUrl,
-      idNumber,
-      dateOfBirth,
-    );
+      const user = await UserRepository.getById(userId);
+
+      await UserRepository.update(
+        userId,
+        name,
+        phone,
+        publicUrl,
+        idNumber,
+        dateOfBirth,
+      );
+
+      if (user.profileImgUrl && (publicUrl || removeProfileImg)) {
+        await supabaseAdmin.storage.from(bucket).remove([user.profileImgUrl]);
+      }
+    } catch (error) {
+      // Rollback
+      if (filePath) {
+        await supabaseAdmin.storage.from(bucket).remove([filePath]);
+      }
+
+      throw error;
+    }
   },
 };
 

@@ -5,15 +5,17 @@ import { UserRole } from "../types/user";
 
 const UserRepository = {
   getById: async (userId: string) => {
-    return await db.select().from(users).where(eq(users.userId, userId));
+    return (await db.select().from(users).where(eq(users.userId, userId)))[0];
   },
 
   getByPhone: async (phone: string) => {
-    return await db.select().from(users).where(eq(users.phone, phone));
+    return (await db.select().from(users).where(eq(users.phone, phone)))[0];
   },
 
   getByIdNumber: async (idNumber: string) => {
-    return await db.select().from(users).where(eq(users.idNumber, idNumber));
+    return (
+      await db.select().from(users).where(eq(users.idNumber, idNumber))
+    )[0];
   },
 
   create: async (userId: string, phone: string, role: UserRole) => {

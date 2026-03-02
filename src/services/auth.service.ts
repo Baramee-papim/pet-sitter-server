@@ -10,9 +10,11 @@ const AuthService = {
     password: string,
     role: UserRole,
   ) => {
-    const lookupUser = (await UserRepository.getByPhone(phone))[0];
+    const lookupUser = {
+      byPhone: await UserRepository.getByPhone(phone),
+    };
 
-    if (lookupUser) {
+    if (lookupUser.byPhone) {
       throw new AppError(400, "User with this phone number already exists");
     }
 
@@ -61,7 +63,7 @@ const AuthService = {
       throw new AppError(401, "Unauthorized or token expired");
     }
 
-    return { user: (await UserRepository.getById(data.user.id))[0], data };
+    return { user: await UserRepository.getById(data.user.id), data };
   },
 
   changeEmail: async (oldEmail: string, newEmail: string, password: string) => {

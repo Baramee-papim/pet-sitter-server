@@ -23,7 +23,7 @@ function protect(role: UserRole, message: string) {
         return res.status(401).json({ error: "Unauthorized: Invalid token" });
       }
 
-      const result = (await UserRepository.getById(data.user.id))[0];
+      const result = await UserRepository.getById(data.user.id);
 
       if (!result) {
         return res.status(404).json({ error: "User not found" });
