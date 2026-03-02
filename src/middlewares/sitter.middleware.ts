@@ -99,14 +99,21 @@ const SitterMiddleware = {
     next();
   },
 
-  // TODO image
   updateSitterBody: (
-    req: Request<{}, {}, Partial<UpdateSitterBody>>,
+    req: Request<{}, {}, { body: string }>,
     res: Response,
     next: NextFunction,
   ) => {
-    if (!req.body) {
+    if (!req.body?.body) {
       return res.status(400).json({ error: "Body is required" });
+    }
+
+    let body: UpdateSitterBody;
+
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: "Invalid JSON body" });
     }
 
     const {
@@ -122,7 +129,7 @@ const SitterMiddleware = {
       provinceId,
       districtId,
       subDistrictId,
-    } = req.body;
+    } = body;
 
     // Check for required fields
     if (!experience) {

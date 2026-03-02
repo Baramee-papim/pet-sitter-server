@@ -22,7 +22,11 @@ SitterRoute.get(
 
 SitterRoute.put(
   "/",
-  [SitterMiddleware.updateSitterBody, ProtectMiddleware.sitter],
+  [
+    UploadMiddleware.images.array("images", 10),
+    SitterMiddleware.updateSitterBody,
+    ProtectMiddleware.sitter,
+  ],
   SitterController.updateSitter,
 );
 

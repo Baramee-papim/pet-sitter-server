@@ -108,11 +108,11 @@ const SitterController = {
     return res.status(200).json(sitterResponse);
   },
 
-  // TODO image
   updateSitter: async (
-    req: Request<{}, {}, UpdateSitterBody>,
+    req: Request<{}, {}, { body: string }>,
     res: Response,
   ) => {
+    const body: UpdateSitterBody = JSON.parse(req.body.body);
     const {
       experience,
       tradeName,
@@ -126,7 +126,8 @@ const SitterController = {
       provinceId,
       districtId,
       subDistrictId,
-    } = req.body;
+    } = body;
+    const files = req.files as Express.Multer.File[];
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
@@ -134,10 +135,10 @@ const SitterController = {
     }
 
     try {
-      const result = await AuthService.getUser(token);
+      const user = await AuthService.getUser(token);
 
       await SitterService.updateSitter(
-        result.data.user.id,
+        user.data.user.id,
         experience,
         tradeName,
         petTypeIds,
@@ -150,6 +151,7 @@ const SitterController = {
         provinceId,
         districtId,
         subDistrictId,
+        files,
       );
     } catch (error) {
       // Client error from service

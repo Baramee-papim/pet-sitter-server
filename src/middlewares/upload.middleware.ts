@@ -21,7 +21,7 @@ const UploadMiddleware = {
 
   image: multer({
     storage,
-    limits: { fieldSize: MAX_SIZE },
+    limits: { fieldSize: MAX_SIZE, files: 1 },
     fileFilter: (req, file, cb) => {
       const allowedTypes = ["image/png", "image/jpg", "image/jpeg"];
 
@@ -29,6 +29,20 @@ const UploadMiddleware = {
         const error = new Error("Only .png .jpg .jpeg allowed") as any;
         error.status = 400;
         cb(error);
+      } else {
+        cb(null, true);
+      }
+    },
+  }),
+
+  images: multer({
+    storage,
+    limits: { fileSize: MAX_SIZE, files: 10 },
+    fileFilter: (req: Request, file: Express.Multer.File, cb) => {
+      const allowedTypes = ["image/png", "image/jpg", "image/jpeg"];
+
+      if (!allowedTypes.includes(file.mimetype)) {
+        cb(new Error("Only .png .jpg .jpeg allowed"));
       } else {
         cb(null, true);
       }

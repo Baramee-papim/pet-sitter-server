@@ -162,24 +162,25 @@ const SitterRepository = {
   },
 
   getByUserId: async (userId: string) => {
-    return await db
-      .select()
-      .from(petSitters)
-      .where(eq(petSitters.userId, userId));
+    return (
+      await db.select().from(petSitters).where(eq(petSitters.userId, userId))
+    )[0];
   },
 
   getByTradeName: async (tradeName: string) => {
-    return await db
-      .select()
-      .from(petSitters)
-      .where(eq(petSitters.tradeName, tradeName));
+    return (
+      await db
+        .select()
+        .from(petSitters)
+        .where(eq(petSitters.tradeName, tradeName))
+    )[0];
   },
 
-  // TODO image
   update: async (
     sitterId: number,
     experience: number,
     tradeName: string,
+    imgUrls: string[],
     petTypeIds: number[],
     introduction: string | null | undefined,
     services: string | null | undefined,
@@ -219,6 +220,19 @@ const SitterRepository = {
           petTypeId,
         })),
       );
+
+      await tx
+        .delete(petSitterImages)
+        .where(eq(petSitterImages.petSitterId, sitterId));
+
+      if (imgUrls.length) {
+        await tx.insert(petSitterImages).values(
+          imgUrls.map((imgUrl) => ({
+            petSitterId: sitterId,
+            imgUrl,
+          })),
+        );
+      }
     });
   },
 };
