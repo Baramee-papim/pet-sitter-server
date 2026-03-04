@@ -22,6 +22,10 @@ const PetService = {
     return result.filter((pet) => pet.pets.petId === petId)[0];
   },
 
+  getPetTypes: async () => {
+    return await PetRepository.getTypes();
+  },
+
   createPet: async (
     userId: string,
     petName: string,

@@ -74,6 +74,23 @@ const PetController = {
     return res.status(200).json(petResponse);
   },
 
+  getPetType: async (req: Request, res: Response) => {
+    let result;
+
+    try {
+      result = await PetService.getPetTypes();
+    } catch {
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const petTypesResponse = result.map((petType) => ({
+      id: petType.petTypeId,
+      name: petType.name,
+    }));
+
+    return res.status(200).json(petTypesResponse);
+  },
+
   createPet: async (req: Request<{}, {}, { body: string }>, res: Response) => {
     const file = req.file!;
     const body: PetBody = JSON.parse(req.body.body);
