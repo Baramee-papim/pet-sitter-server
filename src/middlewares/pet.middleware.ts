@@ -167,7 +167,7 @@ const PetMiddleware = {
       });
     }
 
-    if (typeof about !== "undefined" && about !== null) {
+    if (typeof about !== "undefined" && about !== null && about !== "") {
       if (typeof about !== "string") {
         return res.status(400).json({ error: "About must be a string" });
       }

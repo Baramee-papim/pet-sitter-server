@@ -177,7 +177,7 @@ const SitterRepository = {
 
   update: async (
     sitterId: number,
-    experience: number,
+    experience: string,
     tradeName: string,
     imgUrls: string[],
     petTypeIds: number[],
@@ -185,8 +185,8 @@ const SitterRepository = {
     services: string | null | undefined,
     description: string | null | undefined,
     address: string,
-    latitude: number,
-    longitude: number,
+    latitude: string,
+    longitude: string,
     provinceId: number,
     districtId: number,
     subDistrictId: number,
@@ -195,14 +195,14 @@ const SitterRepository = {
       await tx
         .update(petSitters)
         .set({
-          experience: String(experience),
+          experience,
           tradeName,
           introduction,
           services,
           description,
           address,
-          latitude: String(latitude),
-          longitude: String(longitude),
+          latitude,
+          longitude,
           provinceId,
           districtId,
           subDistrictId,

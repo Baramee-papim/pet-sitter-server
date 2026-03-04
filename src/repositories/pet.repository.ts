@@ -14,7 +14,7 @@ const PetRepository = {
   },
 
   getTypes: async () => {
-    return db.select().from(petTypes);
+    return db.select().from(petTypes).orderBy(asc(petTypes.petTypeId));
   },
 
   create: async (

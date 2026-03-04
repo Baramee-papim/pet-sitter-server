@@ -254,7 +254,11 @@ const SitterMiddleware = {
       return res.status(400).json({ error: "Subdistrict ID must be a number" });
     }
 
-    if (typeof introduction !== "undefined" && introduction !== null) {
+    if (
+      typeof introduction !== "undefined" &&
+      introduction !== null &&
+      introduction !== ""
+    ) {
       if (typeof introduction !== "string") {
         return res.status(400).json({ error: "Introduction must be a string" });
       }
@@ -266,7 +270,11 @@ const SitterMiddleware = {
       }
     }
 
-    if (typeof services !== "undefined" && services !== null) {
+    if (
+      typeof services !== "undefined" &&
+      services !== null &&
+      services !== ""
+    ) {
       if (typeof services !== "string") {
         return res.status(400).json({ error: "Services must be a string" });
       }
@@ -278,7 +286,11 @@ const SitterMiddleware = {
       }
     }
 
-    if (typeof description !== "undefined" && description !== null) {
+    if (
+      typeof description !== "undefined" &&
+      description !== null &&
+      description !== ""
+    ) {
       if (typeof description !== "string") {
         return res.status(400).json({ error: "Description must be a string" });
       }

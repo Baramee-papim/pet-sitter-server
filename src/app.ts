@@ -3,6 +3,7 @@ import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import AuthRoute from "./routes/auth.route";
 import OwnerRoute from "./routes/owner.route";
+import PetRoute from "./routes/pet.route";
 import SitterRoute from "./routes/sitter.route";
 
 const app = express();
@@ -29,6 +30,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", AuthRoute);
+app.use("/pet", PetRoute);
 app.use("/pet-owner", OwnerRoute);
 app.use("/pet-sitter", SitterRoute);
 
