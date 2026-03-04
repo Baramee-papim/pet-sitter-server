@@ -81,15 +81,15 @@ const SitterService = {
 
   updateSitter: async (
     userId: string,
-    experience: number,
+    experience: string,
     tradeName: string,
     petTypeIds: number[],
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
     address: string,
-    latitude: number,
-    longitude: number,
+    latitude: string,
+    longitude: string,
     provinceId: number,
     districtId: number,
     subDistrictId: number,

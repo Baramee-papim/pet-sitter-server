@@ -75,7 +75,11 @@ const UserMiddleware = {
       return res.status(400).json({ error: "Invalid phone number" });
     }
 
-    if (typeof idNumber !== "undefined" && idNumber !== null) {
+    if (
+      typeof idNumber !== "undefined" &&
+      idNumber !== null &&
+      idNumber !== ""
+    ) {
       if (typeof idNumber !== "string") {
         return res.status(400).json({ error: "ID number must be a string" });
       }
@@ -85,7 +89,11 @@ const UserMiddleware = {
       }
     }
 
-    if (typeof dateOfBirth !== "undefined" && dateOfBirth !== null) {
+    if (
+      typeof dateOfBirth !== "undefined" &&
+      dateOfBirth !== null &&
+      dateOfBirth !== ""
+    ) {
       if (!dateRegex.test(dateOfBirth)) {
         return res.status(400).json({ error: "Invalid date of birth" });
       }
