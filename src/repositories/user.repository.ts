@@ -18,13 +18,18 @@ const UserRepository = {
     )[0];
   },
 
-  create: async (userId: string, phone: string, role: UserRole) => {
+  create: async (
+    userId: string,
+    phone: string,
+    role: UserRole,
+    email: string,
+  ) => {
     const defaultName = role === "owner" ? "New Guest" : "New Sitter";
 
     await db.transaction(async (tx) => {
       const [user] = await tx
         .insert(users)
-        .values({ userId, name: defaultName, phone, role })
+        .values({ userId, name: defaultName, phone, role, email })
         .returning();
 
       if (user.role === "sitter") {
@@ -35,15 +40,16 @@ const UserRepository = {
 
   update: async (
     userId: string,
-    name: string,
-    phone: string,
+    name: string | undefined,
+    phone: string | undefined,
     profileImgUrl: string | null | undefined,
     idNumber: string | null | undefined,
     dateOfBirth: string | null | undefined,
+    email: string | undefined,
   ) => {
     await db
       .update(users)
-      .set({ name, phone, profileImgUrl, idNumber, dateOfBirth })
+      .set({ name, phone, profileImgUrl, idNumber, dateOfBirth, email })
       .where(eq(users.userId, userId));
   },
 };

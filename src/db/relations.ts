@@ -12,6 +12,7 @@ import {
   petTypes,
   pets,
   petSittersPetTypes,
+  bookingPets,
 } from "./schema";
 
 export const bookingsRelations = relations(bookings, ({ one, many }) => ({
@@ -24,6 +25,7 @@ export const bookingsRelations = relations(bookings, ({ one, many }) => ({
     references: [petSitters.petSitterId],
   }),
   reviews: many(reviews),
+  bookingPets: many(bookingPets),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -104,7 +106,7 @@ export const petSitterImagesRelations = relations(
   }),
 );
 
-export const petsRelations = relations(pets, ({ one }) => ({
+export const petsRelations = relations(pets, ({ one, many }) => ({
   petType: one(petTypes, {
     fields: [pets.petTypeId],
     references: [petTypes.petTypeId],
@@ -113,11 +115,13 @@ export const petsRelations = relations(pets, ({ one }) => ({
     fields: [pets.userId],
     references: [users.userId],
   }),
+  bookingPets: many(bookingPets),
 }));
 
 export const petTypesRelations = relations(petTypes, ({ many }) => ({
   pets: many(pets),
   petSittersPetTypes: many(petSittersPetTypes),
+  bookingPets: many(bookingPets),
 }));
 
 export const petSittersPetTypesRelations = relations(
@@ -133,3 +137,18 @@ export const petSittersPetTypesRelations = relations(
     }),
   }),
 );
+
+export const bookingPetsRelations = relations(bookingPets, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [bookingPets.bookingId],
+    references: [bookings.bookingId],
+  }),
+  pet: one(pets, {
+    fields: [bookingPets.petId],
+    references: [pets.petId],
+  }),
+  petType: one(petTypes, {
+    fields: [bookingPets.petTypeId],
+    references: [petTypes.petTypeId],
+  }),
+}));

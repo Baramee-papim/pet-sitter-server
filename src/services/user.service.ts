@@ -74,6 +74,7 @@ const UserService = {
         publicUrl,
         idNumber,
         dateOfBirth,
+        undefined,
       );
 
       if (user.profileImgUrl && (publicUrl || removeProfileImg)) {
