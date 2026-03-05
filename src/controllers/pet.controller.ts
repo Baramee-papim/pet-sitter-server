@@ -173,7 +173,11 @@ const PetController = {
         dateOfBirth,
         color.trim(),
         String(weight),
-        about ? about.trim() : about,
+        about
+          ? about.trim()
+          : about === "" || about === null
+          ? null
+          : undefined,
         file,
       );
     } catch (error) {
