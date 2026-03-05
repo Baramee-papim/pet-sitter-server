@@ -141,7 +141,7 @@ const PetController = {
     req: Request<PetIdParams, {}, { body: string }>,
     res: Response,
   ) => {
-    const file = req.file!;
+    const file = req.file;
     const petId = Number(req.params.petId);
     const body: PetBody = JSON.parse(req.body.body);
     const {

@@ -1,12 +1,14 @@
 # Dependencies
 node_modules/
-.documents/
 
 # Build output
 dist/
 
 # Drizzle
 drizzle/
+
+# Document
+.documents/
 
 # Environment variables
 .env

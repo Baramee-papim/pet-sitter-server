@@ -130,7 +130,7 @@ const PetService = {
       if (file) {
         const now = new UTCDate();
         const fileExt = file.mimetype.split("/")[1];
-        filePath = `${userId}/${petName}-${format(
+        filePath = `${userId}/${petName.replace(" ", "")}-${format(
           now,
           "yyyyMMddHHmmss",
         )}.${fileExt}`;
