@@ -1,9 +1,13 @@
+import { format } from "date-fns";
+import { UTCDate } from "@date-fns/utc";
 import AppError from "../errors/AppError";
 import UserRepository from "../repositories/user.repository";
+import supabaseAdmin from "../supabase/admin";
 import AuthService from "./auth.service";
 
+const bucket = "user-assets";
+
 const UserService = {
-  // TODO image
   updateUser: async (
     userId: string,
     name: string,
@@ -13,19 +17,21 @@ const UserService = {
     oldEmail: string,
     newEmail: string | undefined,
     password: string | undefined,
+    file: Express.Multer.File | undefined,
+    removeProfileImg: boolean,
   ) => {
     const lookupUser = {
-      phone: (await UserRepository.getByPhone(phone))[0],
-      idNumber: idNumber
-        ? (await UserRepository.getByIdNumber(idNumber))[0]
+      byPhone: await UserRepository.getByPhone(phone),
+      byIdNumber: idNumber
+        ? await UserRepository.getByIdNumber(idNumber)
         : null,
     };
 
-    if (lookupUser.phone && lookupUser.phone.userId !== userId) {
+    if (lookupUser.byPhone && lookupUser.byPhone.userId !== userId) {
       throw new AppError(400, "User with this phone number already exists");
     }
 
-    if (lookupUser.idNumber && lookupUser.idNumber.userId !== userId) {
+    if (lookupUser.byIdNumber && lookupUser.byIdNumber.userId !== userId) {
       throw new AppError(400, "User with this ID number already exists");
     }
 
@@ -33,7 +39,57 @@ const UserService = {
       await AuthService.changeEmail(oldEmail, newEmail, password);
     }
 
-    await UserRepository.update(userId, name, phone, idNumber, dateOfBirth);
+    let filePath: string | undefined;
+
+    try {
+      // Upload profile image
+      let publicUrl: string | null | undefined;
+
+      if (file) {
+        const now = new UTCDate();
+        const fileExt = file.mimetype.split("/")[1];
+        filePath = `${userId}-${format(now, "yyyyMMddHHmmss")}.${fileExt}`;
+
+        const { error } = await supabaseAdmin.storage
+          .from(bucket)
+          .upload(filePath, file.buffer, { contentType: file.mimetype });
+
+        if (error) {
+          throw error;
+        }
+
+        const { data } = supabaseAdmin.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
+
+        publicUrl = data.publicUrl;
+      }
+
+      const user = await UserRepository.getById(userId);
+
+      await UserRepository.update(
+        userId,
+        name,
+        phone,
+        publicUrl,
+        idNumber,
+        dateOfBirth,
+        undefined,
+      );
+
+      if (user.profileImgUrl && (publicUrl || removeProfileImg)) {
+        await supabaseAdmin.storage
+          .from(bucket)
+          .remove([user.profileImgUrl.split(`/${bucket}/`)[1]]);
+      }
+    } catch (error) {
+      // Rollback
+      if (filePath) {
+        await supabaseAdmin.storage.from(bucket).remove([filePath]);
+      }
+
+      throw error;
+    }
   },
 };
 

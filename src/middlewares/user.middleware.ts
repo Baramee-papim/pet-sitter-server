@@ -10,17 +10,32 @@ import {
 import validateIdNumber from "../utils/validateIdNumber";
 
 const UserMiddleware = {
-  // TODO image
   updateUserBody: (
-    req: Request<{}, {}, Partial<UpdateUserBody>>,
+    req: Request<{}, {}, { body: string }>,
     res: Response,
     next: NextFunction,
   ) => {
-    if (!req.body) {
+    if (!req.body?.body) {
       return res.status(400).json({ error: "Body is required" });
     }
 
-    const { name, phone, idNumber, dateOfBirth, email, password } = req.body;
+    let body: UpdateUserBody;
+
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: "Invalid JSON body" });
+    }
+
+    const {
+      name,
+      phone,
+      idNumber,
+      dateOfBirth,
+      email,
+      password,
+      removeProfileImg,
+    } = body;
 
     // Check for required fields
     if (!name) {
@@ -60,7 +75,11 @@ const UserMiddleware = {
       return res.status(400).json({ error: "Invalid phone number" });
     }
 
-    if (typeof idNumber !== "undefined" && idNumber !== null) {
+    if (
+      typeof idNumber !== "undefined" &&
+      idNumber !== null &&
+      idNumber !== ""
+    ) {
       if (typeof idNumber !== "string") {
         return res.status(400).json({ error: "ID number must be a string" });
       }
@@ -70,7 +89,11 @@ const UserMiddleware = {
       }
     }
 
-    if (typeof dateOfBirth !== "undefined" && dateOfBirth !== null) {
+    if (
+      typeof dateOfBirth !== "undefined" &&
+      dateOfBirth !== null &&
+      dateOfBirth !== ""
+    ) {
       if (!dateRegex.test(dateOfBirth)) {
         return res.status(400).json({ error: "Invalid date of birth" });
       }
@@ -109,6 +132,15 @@ const UserMiddleware = {
           error: "Password must be at least 12 characters long",
         });
       }
+    }
+
+    if (
+      typeof removeProfileImg !== "undefined" &&
+      typeof removeProfileImg !== "boolean"
+    ) {
+      return res.status(400).json({
+        error: "Remove profile image must be a boolean",
+      });
     }
 
     next();

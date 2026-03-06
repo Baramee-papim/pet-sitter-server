@@ -13,16 +13,20 @@ const PetRepository = {
       .orderBy(asc(pets.petId));
   },
 
-  // TODO image
+  getTypes: async () => {
+    return db.select().from(petTypes).orderBy(asc(petTypes.petTypeId));
+  },
+
   create: async (
     userId: string,
     petName: string,
     petTypeId: number,
     sex: PetSex,
-    breed: string | null | undefined,
-    dateOfBirth: string | null | undefined,
-    color: string | null | undefined,
-    weight: string | null | undefined,
+    imgUrl: string,
+    breed: string,
+    dateOfBirth: string,
+    color: string,
+    weight: string,
     about: string | null | undefined,
   ) => {
     await db.insert(pets).values({
@@ -30,6 +34,7 @@ const PetRepository = {
       petName,
       petTypeId,
       sex,
+      imgUrl,
       breed,
       dateOfBirth,
       color,
@@ -38,16 +43,16 @@ const PetRepository = {
     });
   },
 
-  // TODO image
   update: async (
     petId: number,
     petName: string,
     petTypeId: number,
     sex: PetSex,
-    breed: string | null | undefined,
-    dateOfBirth: string | null | undefined,
-    color: string | null | undefined,
-    weight: string | null | undefined,
+    imgUrl: string | undefined,
+    breed: string | undefined,
+    dateOfBirth: string | undefined,
+    color: string | undefined,
+    weight: string | undefined,
     about: string | null | undefined,
   ) => {
     await db
@@ -56,6 +61,7 @@ const PetRepository = {
         petName,
         petTypeId,
         sex,
+        imgUrl,
         breed,
         dateOfBirth,
         color,
@@ -65,7 +71,6 @@ const PetRepository = {
       .where(eq(pets.petId, petId));
   },
 
-  // TODO image
   delete: async (petId: number) => {
     await db.delete(pets).where(eq(pets.petId, petId));
   },

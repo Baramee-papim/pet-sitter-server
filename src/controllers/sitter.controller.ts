@@ -1,9 +1,9 @@
+import { format } from "date-fns";
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import AuthService from "../services/auth.service";
 import SitterService from "../services/sitter.service";
 import {
-  GetSittersBody,
   GetSittersQuery,
   SitterIdParams,
   UpdateSitterBody,
@@ -11,10 +11,10 @@ import {
 
 const SitterController = {
   getSitters: async (
-    req: Request<{}, {}, GetSittersBody, GetSittersQuery>,
+    req: Request<{}, {}, {}, GetSittersQuery>,
     res: Response,
   ) => {
-    const seed = req.body.seed;
+    const seed = req.query.seed || format(new Date(), "yyyyMMdd");
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
     const keyword = req.query.keyword ? req.query.keyword.trim() : null;
@@ -91,6 +91,7 @@ const SitterController = {
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
       experience: result.experience,
+      reviewCount: result.reviewCount,
       rating: result.ratingAvg,
       petTypes: result.petTypes,
       introduction: result.introduction,
@@ -108,11 +109,11 @@ const SitterController = {
     return res.status(200).json(sitterResponse);
   },
 
-  // TODO image
   updateSitter: async (
-    req: Request<{}, {}, UpdateSitterBody>,
+    req: Request<{}, {}, { body: string }>,
     res: Response,
   ) => {
+    const body: UpdateSitterBody = JSON.parse(req.body.body);
     const {
       experience,
       tradeName,
@@ -126,7 +127,8 @@ const SitterController = {
       provinceId,
       districtId,
       subDistrictId,
-    } = req.body;
+    } = body;
+    const files = req.files as Express.Multer.File[];
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
@@ -134,22 +136,35 @@ const SitterController = {
     }
 
     try {
-      const result = await AuthService.getUser(token);
+      const user = await AuthService.getUser(token);
 
       await SitterService.updateSitter(
-        result.data.user.id,
-        experience,
-        tradeName,
+        user.data.user.id,
+        String(experience),
+        tradeName.trim(),
         petTypeIds,
-        introduction,
-        services,
-        description,
-        address,
-        latitude,
-        longitude,
+        introduction
+          ? introduction.trim()
+          : introduction === "" || introduction === null
+          ? null
+          : undefined,
+        services
+          ? services.trim()
+          : services === "" || services === null
+          ? null
+          : undefined,
+        description
+          ? description.trim()
+          : description === "" || description === null
+          ? null
+          : undefined,
+        address.trim(),
+        String(latitude),
+        String(longitude),
         provinceId,
         districtId,
         subDistrictId,
+        files,
       );
     } catch (error) {
       // Client error from service

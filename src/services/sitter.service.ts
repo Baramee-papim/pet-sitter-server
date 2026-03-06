@@ -1,5 +1,11 @@
+import { format } from "date-fns";
+import { UTCDate } from "@date-fns/utc";
 import AppError from "../errors/AppError";
+import PetRepository from "../repositories/pet.repository";
 import SitterRepository from "../repositories/sitter.repository";
+import supabaseAdmin from "../supabase/admin";
+
+const bucket = "sitter-assets";
 
 const SitterService = {
   getSitters: async (
@@ -73,46 +79,113 @@ const SitterService = {
     };
   },
 
-  // TODO image
   updateSitter: async (
     userId: string,
-    experience: number,
+    experience: string,
     tradeName: string,
     petTypeIds: number[],
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
     address: string,
-    latitude: number,
-    longitude: number,
+    latitude: string,
+    longitude: string,
     provinceId: number,
     districtId: number,
     subDistrictId: number,
+    files: Express.Multer.File[],
   ) => {
-    const sitterId = (await SitterRepository.getByUserId(userId))[0]
-      .petSitterId;
+    const lookupPetTypeIds = (await PetRepository.getTypes()).map(
+      (petType) => petType.petTypeId,
+    );
 
-    const lookupSitter = (await SitterRepository.getByTradeName(tradeName))[0];
+    petTypeIds.forEach((petTypeId) => {
+      if (!lookupPetTypeIds.includes(petTypeId)) {
+        throw new AppError(404, "Pet type not found");
+      }
+    });
 
-    if (lookupSitter && lookupSitter.petSitterId !== sitterId) {
+    const sitterId = (await SitterRepository.getByUserId(userId)).petSitterId;
+
+    const lookupSitter = {
+      tradeName: await SitterRepository.getByTradeName(tradeName),
+    };
+
+    if (
+      lookupSitter.tradeName &&
+      lookupSitter.tradeName.petSitterId !== sitterId
+    ) {
       throw new AppError(400, "Sitter with this trade name already exists");
     }
 
-    await SitterRepository.update(
-      sitterId,
-      experience,
-      tradeName,
-      petTypeIds,
-      introduction,
-      services,
-      description,
-      address,
-      latitude,
-      longitude,
-      provinceId,
-      districtId,
-      subDistrictId,
-    );
+    const filePaths: string[] = [];
+
+    try {
+      const now = new UTCDate();
+      const publicUrls: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.mimetype.split("/")[1];
+        const filePath = `${userId}/sitter-${format(
+          now,
+          "yyyyMMddHHmmss",
+        )}-${i}.${ext}`;
+
+        const { error } = await supabaseAdmin.storage
+          .from(bucket)
+          .upload(filePath, file.buffer, {
+            contentType: file.mimetype,
+          });
+
+        if (error) {
+          throw error;
+        }
+
+        filePaths.push(filePath);
+      }
+
+      filePaths.forEach((path) => {
+        const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
+        publicUrls.push(data.publicUrl);
+      });
+
+      const sitter = (await SitterRepository.getById(sitterId))!;
+
+      await SitterRepository.update(
+        sitterId,
+        experience,
+        tradeName,
+        publicUrls,
+        petTypeIds,
+        introduction,
+        services,
+        description,
+        address,
+        latitude,
+        longitude,
+        provinceId,
+        districtId,
+        subDistrictId,
+      );
+
+      if (sitter.petSitterImages.length) {
+        await supabaseAdmin.storage
+          .from(bucket)
+          .remove(
+            sitter.petSitterImages.map(
+              (image) => image.imgUrl.split(`/${bucket}/`)[1],
+            ),
+          );
+      }
+    } catch (error) {
+      // Rollback
+      if (filePaths.length) {
+        await supabaseAdmin.storage.from(bucket).remove(filePaths);
+      }
+
+      throw error;
+    }
   },
 };
 

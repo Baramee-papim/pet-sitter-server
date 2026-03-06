@@ -1,16 +1,64 @@
 import { relations } from "drizzle-orm/relations";
 import {
+  users,
+  bookings,
+  petSitters,
   provinces,
   districts,
   subDistricts,
-  petSitters,
-  petSitterReviews,
-  users,
+  banks,
+  reviews,
   petSitterImages,
   petTypes,
   pets,
   petSittersPetTypes,
+  bookingPets,
 } from "./schema";
+
+export const bookingsRelations = relations(bookings, ({ one, many }) => ({
+  user: one(users, {
+    fields: [bookings.petOwnerId],
+    references: [users.userId],
+  }),
+  petSitter: one(petSitters, {
+    fields: [bookings.petSitterId],
+    references: [petSitters.petSitterId],
+  }),
+  reviews: many(reviews),
+  bookingPets: many(bookingPets),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  bookings: many(bookings),
+  petSitters: many(petSitters),
+  pets: many(pets),
+}));
+
+export const petSittersRelations = relations(petSitters, ({ one, many }) => ({
+  bookings: many(bookings),
+  bank: one(banks, {
+    fields: [petSitters.bankId],
+    references: [banks.bankId],
+  }),
+  district: one(districts, {
+    fields: [petSitters.districtId],
+    references: [districts.districtId],
+  }),
+  province: one(provinces, {
+    fields: [petSitters.provinceId],
+    references: [provinces.provinceId],
+  }),
+  subDistrict: one(subDistricts, {
+    fields: [petSitters.subDistrictId],
+    references: [subDistricts.subDistrictId],
+  }),
+  user: one(users, {
+    fields: [petSitters.userId],
+    references: [users.userId],
+  }),
+  petSitterImages: many(petSitterImages),
+  petSittersPetTypes: many(petSittersPetTypes),
+}));
 
 export const districtsRelations = relations(districts, ({ one, many }) => ({
   province: one(provinces, {
@@ -37,46 +85,15 @@ export const subDistrictsRelations = relations(
   }),
 );
 
-export const petSitterReviewsRelations = relations(
-  petSitterReviews,
-  ({ one }) => ({
-    petSitter: one(petSitters, {
-      fields: [petSitterReviews.petSitterId],
-      references: [petSitters.petSitterId],
-    }),
-    user: one(users, {
-      fields: [petSitterReviews.userId],
-      references: [users.userId],
-    }),
-  }),
-);
-
-export const petSittersRelations = relations(petSitters, ({ one, many }) => ({
-  petSitterReviews: many(petSitterReviews),
-  district: one(districts, {
-    fields: [petSitters.districtId],
-    references: [districts.districtId],
-  }),
-  province: one(provinces, {
-    fields: [petSitters.provinceId],
-    references: [provinces.provinceId],
-  }),
-  subDistrict: one(subDistricts, {
-    fields: [petSitters.subDistrictId],
-    references: [subDistricts.subDistrictId],
-  }),
-  user: one(users, {
-    fields: [petSitters.userId],
-    references: [users.userId],
-  }),
-  petSitterImages: many(petSitterImages),
-  petSittersPetTypes: many(petSittersPetTypes),
+export const banksRelations = relations(banks, ({ many }) => ({
+  petSitters: many(petSitters),
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
-  petSitterReviews: many(petSitterReviews),
-  petSitters: many(petSitters),
-  pets: many(pets),
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [reviews.bookingId],
+    references: [bookings.bookingId],
+  }),
 }));
 
 export const petSitterImagesRelations = relations(
@@ -89,7 +106,7 @@ export const petSitterImagesRelations = relations(
   }),
 );
 
-export const petsRelations = relations(pets, ({ one }) => ({
+export const petsRelations = relations(pets, ({ one, many }) => ({
   petType: one(petTypes, {
     fields: [pets.petTypeId],
     references: [petTypes.petTypeId],
@@ -98,11 +115,13 @@ export const petsRelations = relations(pets, ({ one }) => ({
     fields: [pets.userId],
     references: [users.userId],
   }),
+  bookingPets: many(bookingPets),
 }));
 
 export const petTypesRelations = relations(petTypes, ({ many }) => ({
   pets: many(pets),
   petSittersPetTypes: many(petSittersPetTypes),
+  bookingPets: many(bookingPets),
 }));
 
 export const petSittersPetTypesRelations = relations(
@@ -118,3 +137,18 @@ export const petSittersPetTypesRelations = relations(
     }),
   }),
 );
+
+export const bookingPetsRelations = relations(bookingPets, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [bookingPets.bookingId],
+    references: [bookings.bookingId],
+  }),
+  pet: one(pets, {
+    fields: [bookingPets.petId],
+    references: [pets.petId],
+  }),
+  petType: one(petTypes, {
+    fields: [bookingPets.petTypeId],
+    references: [petTypes.petTypeId],
+  }),
+}));
