@@ -48,6 +48,20 @@ const UploadMiddleware = {
       }
     },
   }),
+
+  uploadImages: (req: Request, res: Response, next: NextFunction) => {
+    UploadMiddleware.images.array("images", 10)(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: err.message });
+      }
+      if (err) {
+        return res
+          .status(400)
+          .json({ error: err.message ?? "File upload error" });
+      }
+      next();
+    });
+  },
 };
 
 export default UploadMiddleware;
