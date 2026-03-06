@@ -47,11 +47,12 @@ const AuthController = {
 
   getUser: async (req: Request, res: Response) => {
     const token = req.headers.authorization?.split(" ")[1];
-    let result;
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
+
+    let result;
 
     try {
       result = await AuthService.getUser(token);
@@ -93,11 +94,12 @@ const AuthController = {
     res: Response,
   ) => {
     const token = req.headers.authorization?.split(" ")[1];
-    const { oldPassword, newPassword } = req.body;
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
+
+    const { oldPassword, newPassword } = req.body;
 
     try {
       await AuthService.resetPassword(token, oldPassword, newPassword);

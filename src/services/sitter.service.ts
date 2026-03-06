@@ -4,6 +4,7 @@ import AppError from "../errors/AppError";
 import PetRepository from "../repositories/pet.repository";
 import SitterRepository from "../repositories/sitter.repository";
 import supabaseAdmin from "../supabase/admin";
+import { SitterStatus } from "../types/sitter";
 
 const bucket = "sitter-assets";
 
@@ -16,6 +17,9 @@ const SitterService = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
+    status: SitterStatus | null,
+    canFilterByName: boolean = false,
+    canFilterByEmail: boolean = false,
   ) => {
     const { result, totalPetSitters } = await SitterRepository.get(
       seed,
@@ -25,6 +29,9 @@ const SitterService = {
       petType,
       rating,
       experience,
+      status,
+      canFilterByName,
+      canFilterByEmail,
     );
 
     return {
@@ -35,6 +42,7 @@ const SitterService = {
         sitter: {
           name: petSitter.user.name,
           profileImgUrl: petSitter.user.profileImgUrl,
+          email: petSitter.user.email,
         },
         petSitterImage: petSitter.petSitterImages[0]?.imgUrl ?? null,
         petTypes: petSitter.petSittersPetTypes.map(

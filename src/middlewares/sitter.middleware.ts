@@ -36,9 +36,9 @@ const SitterMiddleware = {
 
     if (
       !(
-        (typeof page === "undefined" ||
+        (page === undefined ||
           (Number.isInteger(parsedPage) && parsedPage > 0)) &&
-        (typeof limit === "undefined" ||
+        (limit === undefined ||
           (Number.isInteger(parsedlimit) && parsedlimit > 0))
       )
     ) {
@@ -53,7 +53,7 @@ const SitterMiddleware = {
       });
     }
 
-    if (typeof pet_type !== "undefined" && !petTypeRegex.test(pet_type)) {
+    if (pet_type !== undefined && !petTypeRegex.test(pet_type)) {
       return res.status(400).json({
         error: "Pet type must be a comma separated list of pet types",
       });
@@ -61,7 +61,7 @@ const SitterMiddleware = {
 
     if (
       !(
-        typeof rating === "undefined" ||
+        rating === undefined ||
         (Number.isInteger(parsedRating) &&
           parsedRating >= 1 &&
           parsedRating <= 5)
@@ -72,10 +72,7 @@ const SitterMiddleware = {
       });
     }
 
-    if (
-      typeof experience !== "undefined" &&
-      !experienceRegex.test(experience)
-    ) {
+    if (experience !== undefined && !experienceRegex.test(experience)) {
       return res.status(400).json({
         error: "Experience must be a range of integers",
       });
@@ -255,7 +252,7 @@ const SitterMiddleware = {
     }
 
     if (
-      typeof introduction !== "undefined" &&
+      introduction !== undefined &&
       introduction !== null &&
       introduction !== ""
     ) {
@@ -270,11 +267,7 @@ const SitterMiddleware = {
       }
     }
 
-    if (
-      typeof services !== "undefined" &&
-      services !== null &&
-      services !== ""
-    ) {
+    if (services !== undefined && services !== null && services !== "") {
       if (typeof services !== "string") {
         return res.status(400).json({ error: "Services must be a string" });
       }
@@ -287,7 +280,7 @@ const SitterMiddleware = {
     }
 
     if (
-      typeof description !== "undefined" &&
+      description !== undefined &&
       description !== null &&
       description !== ""
     ) {

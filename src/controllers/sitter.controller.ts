@@ -43,6 +43,7 @@ const SitterController = {
         petType,
         rating,
         experience,
+        "Approved",
       );
     } catch {
       return res.status(500).json({ error: "Internal server error" });
@@ -118,13 +119,7 @@ const SitterController = {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
 
-    let body: UpdateSitterBody;
-
-    try {
-      body = JSON.parse(req.body.body);
-    } catch {
-      return res.status(400).json({ error: "Invalid JSON body" });
-    }
+    const body: UpdateSitterBody = JSON.parse(req.body.body);
 
     const {
       experience,
@@ -155,18 +150,18 @@ const SitterController = {
         introduction
           ? introduction.trim()
           : introduction === "" || introduction === null
-            ? null
-            : undefined,
+          ? null
+          : undefined,
         services
           ? services.trim()
           : services === "" || services === null
-            ? null
-            : undefined,
+          ? null
+          : undefined,
         description
           ? description.trim()
           : description === "" || description === null
-            ? null
-            : undefined,
+          ? null
+          : undefined,
         address.trim(),
         String(latitude),
         String(longitude),

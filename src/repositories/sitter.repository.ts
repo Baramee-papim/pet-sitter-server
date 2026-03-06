@@ -17,7 +17,9 @@ import {
   petSitters,
   petSittersPetTypes,
   petTypes,
+  users,
 } from "../db/schema";
+import { SitterStatus } from "../types/sitter";
 
 const SitterRepository = {
   get: async (
@@ -28,11 +30,16 @@ const SitterRepository = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
+    status: SitterStatus | null,
+    canFilterByName: boolean = false,
+    canFilterByEmail: boolean = false,
   ) => {
     const offset = (page - 1) * limit;
     const filters = [];
 
     if (keyword) {
+      const keywordFilters = [ilike(petSitters.tradeName, `%${keyword}%`)];
+
       const sitterIdsByPetTypeKeyword = await db
         .selectDistinct({ petSitterId: petSittersPetTypes.petSitterId })
         .from(petSittersPetTypes)
@@ -47,15 +54,31 @@ const SitterRepository = {
       );
 
       if (sitterIdsFromPetTypes.length > 0) {
-        filters.push(
-          or(
-            ilike(petSitters.tradeName, `%${keyword}%`),
-            inArray(petSitters.petSitterId, sitterIdsFromPetTypes),
-          ),
+        keywordFilters.push(
+          inArray(petSitters.petSitterId, sitterIdsFromPetTypes),
         );
-      } else {
-        filters.push(ilike(petSitters.tradeName, `%${keyword}%`));
       }
+
+      if (canFilterByName || canFilterByEmail) {
+        const userKeywordConditions = [];
+        if (canFilterByName) {
+          userKeywordConditions.push(ilike(users.name, `%${keyword}%`));
+        }
+        if (canFilterByEmail) {
+          userKeywordConditions.push(ilike(users.email, `%${keyword}%`));
+        }
+        const sitterIdsByUserKeyword = await db
+          .selectDistinct({ petSitterId: petSitters.petSitterId })
+          .from(petSitters)
+          .innerJoin(users, eq(users.userId, petSitters.userId))
+          .where(or(...userKeywordConditions));
+        const ids = sitterIdsByUserKeyword.map((row) => row.petSitterId);
+        if (ids.length > 0) {
+          keywordFilters.push(inArray(petSitters.petSitterId, ids));
+        }
+      }
+
+      filters.push(or(...keywordFilters));
     }
 
     if (petType) {
@@ -86,6 +109,10 @@ const SitterRepository = {
       }
     }
 
+    if (status) {
+      filters.push(eq(petSitters.status, status));
+    }
+
     const whereClause = filters.length ? and(...filters) : undefined;
 
     const result = await db.query.petSitters.findMany({
@@ -95,9 +122,10 @@ const SitterRepository = {
         latitude: true,
         longitude: true,
         ratingAvg: true,
+        status: true,
       },
       with: {
-        user: { columns: { name: true, profileImgUrl: true } },
+        user: { columns: { name: true, profileImgUrl: true, email: true } },
         petSitterImages: { columns: { imgUrl: true } },
         province: { columns: { name: true } },
         district: { columns: { name: true } },
@@ -127,7 +155,7 @@ const SitterRepository = {
   },
 
   getById: async (sitterId: number) => {
-    return await db.query.petSitters.findFirst({
+    return db.query.petSitters.findFirst({
       columns: {
         petSitterId: true,
         tradeName: true,
@@ -177,19 +205,19 @@ const SitterRepository = {
 
   update: async (
     sitterId: number,
-    experience: string,
-    tradeName: string,
+    experience: string | null | undefined,
+    tradeName: string | null | undefined,
     imgUrls: string[],
     petTypeIds: number[],
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
-    address: string,
-    latitude: string,
-    longitude: string,
-    provinceId: number,
-    districtId: number,
-    subDistrictId: number,
+    address: string | null | undefined,
+    latitude: string | null | undefined,
+    longitude: string | null | undefined,
+    provinceId: number | null | undefined,
+    districtId: number | null | undefined,
+    subDistrictId: number | null | undefined,
   ) => {
     await db.transaction(async (tx) => {
       await tx

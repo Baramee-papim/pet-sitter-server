@@ -59,7 +59,7 @@ const OwnerRepository = {
   },
 
   getByUserId: async () => {
-    return await db.select().from(users);
+    return db.select().from(users);
   },
 };
 

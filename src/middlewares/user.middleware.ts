@@ -75,11 +75,7 @@ const UserMiddleware = {
       return res.status(400).json({ error: "Invalid phone number" });
     }
 
-    if (
-      typeof idNumber !== "undefined" &&
-      idNumber !== null &&
-      idNumber !== ""
-    ) {
+    if (idNumber !== undefined && idNumber !== null && idNumber !== "") {
       if (typeof idNumber !== "string") {
         return res.status(400).json({ error: "ID number must be a string" });
       }
@@ -90,7 +86,7 @@ const UserMiddleware = {
     }
 
     if (
-      typeof dateOfBirth !== "undefined" &&
+      dateOfBirth !== undefined &&
       dateOfBirth !== null &&
       dateOfBirth !== ""
     ) {
@@ -110,7 +106,7 @@ const UserMiddleware = {
       }
     }
 
-    if (typeof email !== "undefined" || typeof password !== "undefined") {
+    if (email !== undefined || password !== undefined) {
       if (!email) {
         return res.status(400).json({ error: "Email is required" });
       }
@@ -135,7 +131,7 @@ const UserMiddleware = {
     }
 
     if (
-      typeof removeProfileImg !== "undefined" &&
+      removeProfileImg !== undefined &&
       typeof removeProfileImg !== "boolean"
     ) {
       return res.status(400).json({
