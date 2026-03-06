@@ -94,6 +94,7 @@ const SitterService = {
     districtId: number,
     subDistrictId: number,
     files: Express.Multer.File[],
+    existingImages: { url: string; order: number }[],
   ) => {
     const lookupPetTypeIds = (await PetRepository.getTypes()).map(
       (petType) => petType.petTypeId,
@@ -105,7 +106,11 @@ const SitterService = {
       }
     });
 
-    const sitterId = (await SitterRepository.getByUserId(userId)).petSitterId;
+    const sitterRecord = await SitterRepository.getByUserId(userId);
+    if (!sitterRecord) {
+      throw new AppError(404, "Sitter not found for this user");
+    }
+    const sitterId = sitterRecord.petSitterId;
 
     const lookupSitter = {
       tradeName: await SitterRepository.getByTradeName(tradeName),
@@ -119,14 +124,16 @@ const SitterService = {
     }
 
     const filePaths: string[] = [];
+    const publicUrls: string[] = [];
 
     try {
       const now = new UTCDate();
-      const publicUrls: string[] = [];
 
+      // Upload new images with upsert: true to overwrite if same path
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const ext = file.mimetype.split("/")[1];
+
         const filePath = `${userId}/sitter-${format(
           now,
           "yyyyMMddHHmmss",
@@ -136,27 +143,43 @@ const SitterService = {
           .from(bucket)
           .upload(filePath, file.buffer, {
             contentType: file.mimetype,
+            upsert: true,
           });
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
         filePaths.push(filePath);
+
+        const { data } = supabaseAdmin.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
+        publicUrls.push(data.publicUrl);
       }
 
-      filePaths.forEach((path) => {
-        const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
-        publicUrls.push(data.publicUrl);
-      });
+      const sitter = await SitterRepository.getById(sitterId);
 
-      const sitter = (await SitterRepository.getById(sitterId))!;
+      // sort kept images by order, extract URLs
+      const safeExistingImages = Array.isArray(existingImages)
+        ? existingImages
+        : [];
+      const keptImages = safeExistingImages
+        .sort((a, b) => a.order - b.order)
+        .map((img) => img.url);
+
+      // kept existing first, new uploads appended at end
+      const finalImages = [...keptImages, ...publicUrls];
+
+      //  fallback: if nothing sent, keep all old images
+      const imagesToSave =
+        finalImages.length > 0
+          ? finalImages
+          : (sitter?.petSitterImages.map((img) => img.imgUrl) ?? []);
 
       await SitterRepository.update(
         sitterId,
         experience,
         tradeName,
-        publicUrls,
+        imagesToSave,
         petTypeIds,
         introduction,
         services,
@@ -169,21 +192,32 @@ const SitterService = {
         subDistrictId,
       );
 
-      if (sitter.petSitterImages.length) {
-        await supabaseAdmin.storage
-          .from(bucket)
-          .remove(
-            sitter.petSitterImages.map(
-              (image) => image.imgUrl.split(`/${bucket}/`)[1],
-            ),
-          );
+      // delete only storage files that were removed by user
+      if (sitter?.petSitterImages.length) {
+        const keptUrls = new Set(keptImages);
+        const urlsToDelete = sitter.petSitterImages
+          .map((img) => img.imgUrl)
+          .filter((url) => !keptUrls.has(url));
+
+        if (urlsToDelete.length) {
+          const storagePaths = urlsToDelete
+            .map((url) => {
+              // correctly extract storage path from full public URL
+              const match = url.match(/\/object\/public\/sitter-assets\/(.+)/);
+              return match ? match[1] : null;
+            })
+            .filter((path): path is string => path !== null);
+
+          if (storagePaths.length) {
+            await supabaseAdmin.storage.from(bucket).remove(storagePaths);
+          }
+        }
       }
     } catch (error) {
-      // Rollback
+      // rollback newly uploaded files on any error
       if (filePaths.length) {
         await supabaseAdmin.storage.from(bucket).remove(filePaths);
       }
-
       throw error;
     }
   },

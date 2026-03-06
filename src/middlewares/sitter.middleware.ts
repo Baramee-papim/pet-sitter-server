@@ -117,7 +117,7 @@ const SitterMiddleware = {
     } = body;
 
     // Check for required fields
-    if (!experience) {
+    if (experience === undefined || experience === null) {
       return res.status(400).json({ error: "Experience is required" });
     }
 
@@ -133,23 +133,23 @@ const SitterMiddleware = {
       return res.status(400).json({ error: "Address is required" });
     }
 
-    if (!latitude) {
+    if (latitude === undefined || latitude === null) {
       return res.status(400).json({ error: "Latitude is required" });
     }
 
-    if (!longitude) {
+    if (longitude === undefined || longitude === null) {
       return res.status(400).json({ error: "Longitude is required" });
     }
 
-    if (!provinceId) {
+    if (provinceId === undefined || provinceId === null) {
       return res.status(400).json({ error: "Province ID is required" });
     }
 
-    if (!districtId) {
+    if (districtId === undefined || districtId === null) {
       return res.status(400).json({ error: "District ID is required" });
     }
 
-    if (!subDistrictId) {
+    if (subDistrictId === undefined || subDistrictId === null) {
       return res.status(400).json({ error: "Subdistrict ID is required" });
     }
 

@@ -145,7 +145,7 @@ const SitterRepository = {
         user: { columns: { name: true, profileImgUrl: true } },
         petSitterImages: {
           columns: { imgUrl: true },
-          orderBy: [asc(petSitterImages.imgUrl)],
+          orderBy: [asc(petSitterImages.imageOrder)],
         },
         province: { columns: { name: true } },
         district: { columns: { name: true } },
@@ -226,9 +226,10 @@ const SitterRepository = {
 
       if (imgUrls.length) {
         await tx.insert(petSitterImages).values(
-          imgUrls.map((imgUrl) => ({
+          imgUrls.map((imgUrl, index) => ({
             petSitterId: sitterId,
             imgUrl,
+            imageOrder: index,
           })),
         );
       }

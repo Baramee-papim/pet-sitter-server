@@ -27,4 +27,8 @@ export interface UpdateSitterBody {
   provinceId: number;
   districtId: number;
   subDistrictId: number;
+  existingImages: {
+    url: string;
+    order: number;
+  }[];
 }

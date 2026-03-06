@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import AuthService from "../services/auth.service";
+import SitterRepository from "../repositories/sitter.repository";
 import { LoginBody, RegisterBody, ResetPasswordBody } from "../types/auth";
 
 const AuthController = {
@@ -63,6 +64,17 @@ const AuthController = {
       return res.status(500).json({ error: "Internal server error" });
     }
 
+    let sitterId: number | null = null;
+    if (result.user.role === "sitter") {
+      try {
+        const sitter = await SitterRepository.getByUserId(result.data.user.id);
+        sitterId = sitter?.petSitterId ?? null;
+      } catch {
+        // non-fatal — sitter profile may not exist yet
+        sitterId = null;
+      }
+    }
+
     const userResponse = {
       id: result.data.user.id,
       email: result.data.user.email,
@@ -70,6 +82,7 @@ const AuthController = {
       phone: result.user.phone,
       profileImgUrl: result.user.profileImgUrl,
       role: result.user.role,
+      sitterId,
     };
 
     return res.status(200).json(userResponse);

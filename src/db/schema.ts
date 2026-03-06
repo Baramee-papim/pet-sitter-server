@@ -334,12 +334,14 @@ export const petSitterImages = pgTable(
     petSitterImageId: serial("pet_sitter_image_id").primaryKey().notNull(),
     petSitterId: integer("pet_sitter_id").notNull(),
     imgUrl: text("img_url").notNull(),
+    imageOrder: integer("image_order").notNull().default(0),
   },
   (table) => [
-    index("pet_sitter_images_pet_sitter_id_idx").using(
-      "btree",
-      table.petSitterId.asc().nullsLast().op("int4_ops"),
+    index("pet_sitter_images_sitter_order_idx").on(
+      table.petSitterId,
+      table.imageOrder,
     ),
+
     foreignKey({
       columns: [table.petSitterId],
       foreignColumns: [petSitters.petSitterId],

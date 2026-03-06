@@ -105,15 +105,27 @@ const SitterController = {
       subDistrict: result.subDistrict,
       postCode: result.postCode,
     };
-
     return res.status(200).json(sitterResponse);
   },
 
   updateSitter: async (
-    req: Request<{}, {}, { body: string }>,
+    req: Request<SitterIdParams, {}, { body: string }>,
     res: Response,
   ) => {
-    const body: UpdateSitterBody = JSON.parse(req.body.body);
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
+    let body: UpdateSitterBody;
+
+    try {
+      body = JSON.parse(req.body.body);
+    } catch {
+      return res.status(400).json({ error: "Invalid JSON body" });
+    }
+
     const {
       experience,
       tradeName,
@@ -127,13 +139,10 @@ const SitterController = {
       provinceId,
       districtId,
       subDistrictId,
+      existingImages,
     } = body;
-    const files = req.files as Express.Multer.File[];
-    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized: Token missing" });
-    }
+    const files = (req.files as Express.Multer.File[]) || [];
 
     try {
       const user = await AuthService.getUser(token);
@@ -146,18 +155,18 @@ const SitterController = {
         introduction
           ? introduction.trim()
           : introduction === "" || introduction === null
-          ? null
-          : undefined,
+            ? null
+            : undefined,
         services
           ? services.trim()
           : services === "" || services === null
-          ? null
-          : undefined,
+            ? null
+            : undefined,
         description
           ? description.trim()
           : description === "" || description === null
-          ? null
-          : undefined,
+            ? null
+            : undefined,
         address.trim(),
         String(latitude),
         String(longitude),
@@ -165,6 +174,7 @@ const SitterController = {
         districtId,
         subDistrictId,
         files,
+        existingImages ?? [],
       );
     } catch (error) {
       // Client error from service
