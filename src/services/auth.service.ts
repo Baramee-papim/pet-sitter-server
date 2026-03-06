@@ -30,7 +30,7 @@ const AuthService = {
       throw new AppError(400, "Failed to create user. Please try again");
     }
 
-    await UserRepository.create(data.user.id, phone, role);
+    await UserRepository.create(data.user.id, phone, role, email);
   },
 
   login: async (email: string, password: string) => {
@@ -63,7 +63,24 @@ const AuthService = {
       throw new AppError(401, "Unauthorized or token expired");
     }
 
-    return { user: await UserRepository.getById(data.user.id), data };
+    let result = await UserRepository.getById(data.user.id);
+
+    // If the email in the token is different from the email in the database, update the email in the database
+    if (data.user.email !== result.email) {
+      await UserRepository.update(
+        data.user.id,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        data.user.email,
+      );
+
+      result = await UserRepository.getById(data.user.id);
+    }
+
+    return { user: result, data };
   },
 
   changeEmail: async (oldEmail: string, newEmail: string, password: string) => {
