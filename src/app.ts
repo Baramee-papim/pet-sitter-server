@@ -1,6 +1,7 @@
 import "dotenv/config";
 import cors from "cors";
 import express, { NextFunction, Request, Response } from "express";
+import AdminRoute from "./routes/admin.route";
 import AuthRoute from "./routes/auth.route";
 import OwnerRoute from "./routes/owner.route";
 import PetRoute from "./routes/pet.route";
@@ -33,6 +34,7 @@ app.use("/auth", AuthRoute);
 app.use("/pet", PetRoute);
 app.use("/pet-owner", OwnerRoute);
 app.use("/pet-sitter", SitterRoute);
+app.use("/admin", AdminRoute);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err) {
