@@ -25,7 +25,10 @@ const AdminMiddleware = {
   ) => {
     const { status } = req.query;
 
-    if (status !== undefined && !SITTER_STATUS.includes(status)) {
+    if (
+      status !== undefined &&
+      !(status === "Banned" || SITTER_STATUS.includes(status))
+    ) {
       return res.status(400).json({ error: "Invalid sitter status" });
     }
 

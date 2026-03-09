@@ -20,6 +20,7 @@ import {
   users,
 } from "../db/schema";
 import { SitterStatus } from "../types/sitter";
+import { UserStatus } from "../types/user";
 
 const SitterRepository = {
   get: async (
@@ -30,7 +31,7 @@ const SitterRepository = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
-    status: SitterStatus | null,
+    status: SitterStatus | Extract<UserStatus, "Banned"> | null,
     canFilterByName: boolean = false,
     canFilterByEmail: boolean = false,
   ) => {
@@ -72,7 +73,9 @@ const SitterRepository = {
           .from(petSitters)
           .innerJoin(users, eq(users.userId, petSitters.userId))
           .where(or(...userKeywordConditions));
+
         const ids = sitterIdsByUserKeyword.map((row) => row.petSitterId);
+
         if (ids.length > 0) {
           keywordFilters.push(inArray(petSitters.petSitterId, ids));
         }
@@ -110,7 +113,19 @@ const SitterRepository = {
     }
 
     if (status) {
-      filters.push(eq(petSitters.status, status));
+      if (status === "Banned") {
+        const sitterIdsByBannedStatus = await db
+          .selectDistinct({ petSitterId: petSitters.petSitterId })
+          .from(petSitters)
+          .innerJoin(users, eq(users.userId, petSitters.userId))
+          .where(eq(users.status, "Banned"));
+
+        const ids = sitterIdsByBannedStatus.map((row) => row.petSitterId);
+
+        filters.push(inArray(petSitters.petSitterId, ids));
+      } else {
+        filters.push(eq(petSitters.status, status));
+      }
     }
 
     const whereClause = filters.length ? and(...filters) : undefined;
@@ -125,7 +140,14 @@ const SitterRepository = {
         status: true,
       },
       with: {
-        user: { columns: { name: true, profileImgUrl: true, email: true } },
+        user: {
+          columns: {
+            name: true,
+            profileImgUrl: true,
+            email: true,
+            status: true,
+          },
+        },
         petSitterImages: { columns: { imgUrl: true } },
         province: { columns: { name: true } },
         district: { columns: { name: true } },

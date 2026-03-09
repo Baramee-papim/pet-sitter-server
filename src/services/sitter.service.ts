@@ -5,6 +5,7 @@ import PetRepository from "../repositories/pet.repository";
 import SitterRepository from "../repositories/sitter.repository";
 import supabaseAdmin from "../supabase/admin";
 import { SitterStatus } from "../types/sitter";
+import { UserStatus } from "../types/user";
 
 const bucket = "sitter-assets";
 
@@ -17,7 +18,7 @@ const SitterService = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
-    status: SitterStatus | null,
+    status: SitterStatus | Extract<UserStatus, "Banned"> | null,
     canFilterByName: boolean = false,
     canFilterByEmail: boolean = false,
   ) => {
@@ -43,6 +44,7 @@ const SitterService = {
           name: petSitter.user.name,
           profileImgUrl: petSitter.user.profileImgUrl,
           email: petSitter.user.email,
+          status: petSitter.user.status,
         },
         petSitterImage: petSitter.petSitterImages[0]?.imgUrl ?? null,
         petTypes: petSitter.petSittersPetTypes.map(
@@ -181,7 +183,7 @@ const SitterService = {
       const imagesToSave =
         finalImages.length > 0
           ? finalImages
-          : (sitter?.petSitterImages.map((img) => img.imgUrl) ?? []);
+          : sitter?.petSitterImages.map((img) => img.imgUrl) ?? [];
 
       await SitterRepository.update(
         sitterId,
