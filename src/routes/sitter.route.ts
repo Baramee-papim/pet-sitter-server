@@ -32,9 +32,11 @@ SitterRoute.get(
 
 SitterRoute.put(
   "/:sitterId",
-  UploadMiddleware.uploadImages,
-  SitterMiddleware.updateSitterBody,
-  ProtectMiddleware.sitter,
+  [
+    UploadMiddleware.uploadImages,
+    SitterMiddleware.updateSitterBody,
+    ProtectMiddleware.sitter,
+  ],
   SitterController.updateSitter,
 );
 

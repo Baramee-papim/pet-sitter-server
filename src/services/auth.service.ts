@@ -75,6 +75,7 @@ const AuthService = {
         undefined,
         undefined,
         data.user.email,
+        undefined,
       );
 
       result = await UserRepository.getById(data.user.id);

@@ -69,7 +69,7 @@ const PetMiddleware = {
       return res.status(400).json({ error: "Color is required" });
     }
 
-    if (!weight) {
+    if (weight === undefined || weight === null) {
       return res.status(400).json({ error: "Weight is required" });
     }
 
@@ -167,7 +167,7 @@ const PetMiddleware = {
       });
     }
 
-    if (typeof about !== "undefined" && about !== null && about !== "") {
+    if (about !== undefined && about !== null && about !== "") {
       if (typeof about !== "string") {
         return res.status(400).json({ error: "About must be a string" });
       }

@@ -4,28 +4,35 @@ import AppError from "../errors/AppError";
 import UserRepository from "../repositories/user.repository";
 import supabaseAdmin from "../supabase/admin";
 import AuthService from "./auth.service";
+import { UserStatus } from "../types/user";
 
 const bucket = "user-assets";
 
 const UserService = {
   updateUser: async (
     userId: string,
-    name: string,
-    phone: string,
+    name: string | undefined,
+    phone: string | undefined,
     idNumber: string | null | undefined,
     dateOfBirth: string | null | undefined,
-    oldEmail: string,
+    status: UserStatus | undefined,
+    oldEmail: string | undefined,
     newEmail: string | undefined,
     password: string | undefined,
     file: Express.Multer.File | undefined,
-    removeProfileImg: boolean,
+    removeProfileImg: boolean = false,
   ) => {
     const lookupUser = {
-      byPhone: await UserRepository.getByPhone(phone),
+      byUserId: await UserRepository.getById(userId),
+      byPhone: phone ? await UserRepository.getByPhone(phone) : null,
       byIdNumber: idNumber
         ? await UserRepository.getByIdNumber(idNumber)
         : null,
     };
+
+    if (!lookupUser.byUserId) {
+      throw new AppError(404, "User not found");
+    }
 
     if (lookupUser.byPhone && lookupUser.byPhone.userId !== userId) {
       throw new AppError(400, "User with this phone number already exists");
@@ -35,7 +42,7 @@ const UserService = {
       throw new AppError(400, "User with this ID number already exists");
     }
 
-    if (newEmail && password) {
+    if (oldEmail && newEmail && password) {
       await AuthService.changeEmail(oldEmail, newEmail, password);
     }
 
@@ -75,6 +82,7 @@ const UserService = {
         idNumber,
         dateOfBirth,
         undefined,
+        status,
       );
 
       if (user.profileImgUrl && (publicUrl || removeProfileImg)) {
