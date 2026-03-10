@@ -94,6 +94,41 @@ const SitterService = {
     };
   },
 
+  getSitterByUserId: async (userId: string) => {
+    const result = await SitterRepository.getByUserId(userId);
+
+    if (!result) {
+      throw new AppError(404, "Sitter not found for this user");
+    }
+
+    return {
+      ...result,
+      sitter: {
+        name: result.user.name,
+        phone: result.user.phone,
+        profileImgUrl: result.user.profileImgUrl,
+        idNumber: result.user.idNumber,
+        dateOfBirth: result.user.dateOfBirth,
+        email: result.user.email,
+        status: result.user.status,
+      },
+      petSitterImages: result.petSitterImages.map(
+        (petSitterImage) => petSitterImage.imgUrl,
+      ),
+      petTypes: result.petSittersPetTypes.map(
+        (petSitterPetType) => petSitterPetType.petType.name,
+      ),
+      province: result.province?.name ?? null,
+      district: result.district?.name ?? null,
+      subDistrict: result.subDistrict?.name ?? null,
+      postCode: result.subDistrict?.postCode ?? null,
+      experience: result.experience ? Number(result.experience) : null,
+      latitude: result.latitude ? Number(result.latitude) : null,
+      longitude: result.longitude ? Number(result.longitude) : null,
+      ratingAvg: result.ratingAvg ? Number(result.ratingAvg) : null,
+    };
+  },
+
   updateSitter: async (
     userId: string,
     experience: string | null | undefined,
@@ -124,9 +159,11 @@ const SitterService = {
     }
 
     const sitterRecord = await SitterRepository.getByUserId(userId);
+
     if (!sitterRecord) {
       throw new AppError(404, "Sitter not found for this user");
     }
+
     const sitterId = sitterRecord.petSitterId;
 
     const lookupSitter = {

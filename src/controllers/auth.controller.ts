@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import AuthService from "../services/auth.service";
-import SitterRepository from "../repositories/sitter.repository";
+import SitterService from "../services/sitter.service";
 import { LoginBody, RegisterBody, ResetPasswordBody } from "../types/auth";
 
 const AuthController = {
@@ -65,14 +65,16 @@ const AuthController = {
       return res.status(500).json({ error: "Internal server error" });
     }
 
-    let sitterId: number | null = null;
+    let sitterId: number | undefined = undefined;
     if (result.user.role === "sitter") {
       try {
-        const sitter = await SitterRepository.getByUserId(result.data.user.id);
-        sitterId = sitter?.petSitterId ?? null;
+        const sitter = await SitterService.getSitterByUserId(
+          result.data.user.id,
+        );
+        sitterId = sitter.petSitterId;
       } catch {
         // non-fatal — sitter profile may not exist yet
-        sitterId = null;
+        sitterId = undefined;
       }
     }
 

@@ -234,9 +234,50 @@ const SitterRepository = {
   },
 
   getByUserId: async (userId: string) => {
-    return (
-      await db.select().from(petSitters).where(eq(petSitters.userId, userId))
-    )[0];
+    return db.query.petSitters.findFirst({
+      columns: {
+        petSitterId: true,
+        tradeName: true,
+        experience: true,
+        introduction: true,
+        services: true,
+        description: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        reviewCount: true,
+        ratingAvg: true,
+        status: true,
+      },
+      with: {
+        user: {
+          columns: {
+            name: true,
+            phone: true,
+            profileImgUrl: true,
+            idNumber: true,
+            dateOfBirth: true,
+            email: true,
+            status: true,
+          },
+        },
+        petSitterImages: {
+          columns: { imgUrl: true },
+          orderBy: [asc(petSitterImages.imageOrder)],
+        },
+        province: { columns: { name: true } },
+        district: { columns: { name: true } },
+        subDistrict: { columns: { name: true, postCode: true } },
+        petSittersPetTypes: {
+          columns: {},
+          with: {
+            petType: { columns: { name: true } },
+          },
+          orderBy: [asc(petTypes.petTypeId)],
+        },
+      },
+      where: eq(petSitters.userId, userId),
+    });
   },
 
   getByTradeName: async (tradeName: string) => {

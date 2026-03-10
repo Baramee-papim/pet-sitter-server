@@ -15,6 +15,12 @@ SitterRoute.get(
 );
 
 SitterRoute.get(
+  "/profile",
+  [ProtectMiddleware.sitter],
+  SitterController.getSitterProfile,
+);
+
+SitterRoute.get(
   "/:sitterId",
   [SitterMiddleware.sitterId],
   SitterController.getSitterById,
