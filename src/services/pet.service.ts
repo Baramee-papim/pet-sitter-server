@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
 import AppError from "../errors/AppError";
 import PetRepository from "../repositories/pet.repository";
+import UserRepository from "../repositories/user.repository";
 import supabaseAdmin from "../supabase/admin";
 import { PetSex } from "../types/pet";
 
@@ -9,7 +10,7 @@ const bucket = "pet-assets";
 
 const PetService = {
   getPetsByUserId: async (userId: string) => {
-    return await PetRepository.getByUserId(userId);
+    return PetRepository.getByUserId(userId);
   },
 
   getPetById: async (userId: string, petId: number) => {
@@ -23,7 +24,7 @@ const PetService = {
   },
 
   getPetTypes: async () => {
-    return await PetRepository.getTypes();
+    return PetRepository.getTypes();
   },
 
   createPet: async (
@@ -35,9 +36,15 @@ const PetService = {
     dateOfBirth: string,
     color: string,
     weight: string,
-    about: string | null | undefined,
+    about: string | null,
     file: Express.Multer.File,
   ) => {
+    const lookupUser = await UserRepository.getById(userId);
+
+    if (!lookupUser) {
+      throw new AppError(404, "User not found");
+    }
+
     const lookupPetTypeIds = (await PetRepository.getTypes()).map(
       (petType) => petType.petTypeId,
     );
@@ -96,9 +103,9 @@ const PetService = {
   updatePet: async (
     userId: string,
     petId: number,
-    petName: string,
-    petTypeId: number,
-    sex: PetSex,
+    petName: string | undefined,
+    petTypeId: number | undefined,
+    sex: PetSex | undefined,
     breed: string | undefined,
     dateOfBirth: string | undefined,
     color: string | undefined,
@@ -110,7 +117,7 @@ const PetService = {
       (petType) => petType.petTypeId,
     );
 
-    if (!lookupPetTypeIds.includes(petTypeId)) {
+    if (petTypeId && !lookupPetTypeIds.includes(petTypeId)) {
       throw new AppError(404, "Pet type not found");
     }
 
@@ -121,6 +128,8 @@ const PetService = {
       throw new AppError(404, "Pet not found or not owned by this owner");
     }
 
+    const pet = lookupPets.filter((pet) => pet.pets.petId === petId)[0];
+
     let filePath: string | undefined;
 
     try {
@@ -130,10 +139,10 @@ const PetService = {
       if (file) {
         const now = new UTCDate();
         const fileExt = file.mimetype.split("/")[1];
-        filePath = `${userId}/${petName.replace(" ", "")}-${format(
-          now,
-          "yyyyMMddHHmmss",
-        )}.${fileExt}`;
+        filePath = `${userId}/${(petName ? petName : pet.pets.petName).replace(
+          " ",
+          "",
+        )}-${format(now, "yyyyMMddHHmmss")}.${fileExt}`;
 
         const { error } = await supabaseAdmin.storage
           .from(bucket)
@@ -149,8 +158,6 @@ const PetService = {
 
         publicUrl = data.publicUrl;
       }
-
-      const pet = lookupPets.filter((pet) => pet.pets.petId === petId)[0];
 
       await PetRepository.update(
         petId,

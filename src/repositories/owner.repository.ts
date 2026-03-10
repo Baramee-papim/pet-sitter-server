@@ -58,8 +58,20 @@ const OwnerRepository = {
     return { result, totalOwners };
   },
 
-  getByUserId: async () => {
-    return await db.select().from(users);
+  getByUserId: async (userId: string) => {
+    return db.query.users.findFirst({
+      columns: {
+        userId: true,
+        name: true,
+        phone: true,
+        profileImgUrl: true,
+        idNumber: true,
+        dateOfBirth: true,
+        email: true,
+        status: true,
+      },
+      where: and(eq(users.role, "owner"), eq(users.userId, userId)),
+    });
   },
 };
 

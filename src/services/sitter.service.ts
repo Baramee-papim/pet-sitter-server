@@ -4,6 +4,8 @@ import AppError from "../errors/AppError";
 import PetRepository from "../repositories/pet.repository";
 import SitterRepository from "../repositories/sitter.repository";
 import supabaseAdmin from "../supabase/admin";
+import { SitterStatus } from "../types/sitter";
+import { UserStatus } from "../types/user";
 
 const bucket = "sitter-assets";
 
@@ -16,6 +18,9 @@ const SitterService = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
+    status: SitterStatus | Extract<UserStatus, "Banned"> | null,
+    canFilterByName: boolean = false,
+    canFilterByEmail: boolean = false,
   ) => {
     const { result, totalPetSitters } = await SitterRepository.get(
       seed,
@@ -25,6 +30,9 @@ const SitterService = {
       petType,
       rating,
       experience,
+      status,
+      canFilterByName,
+      canFilterByEmail,
     );
 
     return {
@@ -35,6 +43,8 @@ const SitterService = {
         sitter: {
           name: petSitter.user.name,
           profileImgUrl: petSitter.user.profileImgUrl,
+          email: petSitter.user.email,
+          status: petSitter.user.status,
         },
         petSitterImage: petSitter.petSitterImages[0]?.imgUrl ?? null,
         petTypes: petSitter.petSittersPetTypes.map(
@@ -49,8 +59,8 @@ const SitterService = {
     };
   },
 
-  getSitterById: async (sitterId: number) => {
-    const result = await SitterRepository.getById(sitterId);
+  getSitterById: async (sitterId: number, onlyApproved: boolean = true) => {
+    const result = await SitterRepository.getById(sitterId, onlyApproved);
 
     if (!result) {
       throw new AppError(404, "Sitter not found");
@@ -60,7 +70,12 @@ const SitterService = {
       ...result,
       sitter: {
         name: result.user.name,
+        phone: result.user.phone,
         profileImgUrl: result.user.profileImgUrl,
+        idNumber: result.user.idNumber,
+        dateOfBirth: result.user.dateOfBirth,
+        email: result.user.email,
+        status: result.user.status,
       },
       petSitterImages: result.petSitterImages.map(
         (petSitterImage) => petSitterImage.imgUrl,
@@ -81,30 +96,32 @@ const SitterService = {
 
   updateSitter: async (
     userId: string,
-    experience: string,
-    tradeName: string,
-    petTypeIds: number[],
+    experience: string | null | undefined,
+    tradeName: string | null | undefined,
+    petTypeIds: number[] | undefined,
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
-    address: string,
-    latitude: string,
-    longitude: string,
-    provinceId: number,
-    districtId: number,
-    subDistrictId: number,
+    address: string | null | undefined,
+    latitude: string | null | undefined,
+    longitude: string | null | undefined,
+    provinceId: number | null | undefined,
+    districtId: number | null | undefined,
+    subDistrictId: number | null | undefined,
     files: Express.Multer.File[],
     existingImages: { url: string; order: number }[],
   ) => {
-    const lookupPetTypeIds = (await PetRepository.getTypes()).map(
-      (petType) => petType.petTypeId,
-    );
+    if (petTypeIds) {
+      const lookupPetTypeIds = (await PetRepository.getTypes()).map(
+        (petType) => petType.petTypeId,
+      );
 
-    petTypeIds.forEach((petTypeId) => {
-      if (!lookupPetTypeIds.includes(petTypeId)) {
-        throw new AppError(404, "Pet type not found");
-      }
-    });
+      petTypeIds.forEach((petTypeId) => {
+        if (!lookupPetTypeIds.includes(petTypeId)) {
+          throw new AppError(404, "Pet type not found");
+        }
+      });
+    }
 
     const sitterRecord = await SitterRepository.getByUserId(userId);
     if (!sitterRecord) {
@@ -113,7 +130,9 @@ const SitterService = {
     const sitterId = sitterRecord.petSitterId;
 
     const lookupSitter = {
-      tradeName: await SitterRepository.getByTradeName(tradeName),
+      tradeName: tradeName
+        ? await SitterRepository.getByTradeName(tradeName)
+        : null,
     };
 
     if (
@@ -173,7 +192,7 @@ const SitterService = {
       const imagesToSave =
         finalImages.length > 0
           ? finalImages
-          : (sitter?.petSitterImages.map((img) => img.imgUrl) ?? []);
+          : sitter?.petSitterImages.map((img) => img.imgUrl) ?? [];
 
       await SitterRepository.update(
         sitterId,

@@ -27,7 +27,7 @@ const PetRepository = {
     dateOfBirth: string,
     color: string,
     weight: string,
-    about: string | null | undefined,
+    about: string | null,
   ) => {
     await db.insert(pets).values({
       userId,
@@ -45,9 +45,9 @@ const PetRepository = {
 
   update: async (
     petId: number,
-    petName: string,
-    petTypeId: number,
-    sex: PetSex,
+    petName: string | undefined,
+    petTypeId: number | undefined,
+    sex: PetSex | undefined,
     imgUrl: string | undefined,
     breed: string | undefined,
     dateOfBirth: string | undefined,

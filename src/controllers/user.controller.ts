@@ -6,7 +6,14 @@ import { UpdateUserBody } from "../types/user";
 
 const UserController = {
   updateUser: async (req: Request<{}, {}, { body: string }>, res: Response) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
     const body: UpdateUserBody = JSON.parse(req.body.body);
+
     const {
       name,
       phone,
@@ -16,22 +23,19 @@ const UserController = {
       password,
       removeProfileImg,
     } = body;
-    const file = req.file;
-    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized: Token missing" });
-    }
+    const file = req.file;
 
     try {
       const user = await AuthService.getUser(token);
 
       await UserService.updateUser(
         user.data.user.id,
-        name.trim(),
+        name ? name.trim() : undefined,
         phone,
         idNumber,
         dateOfBirth,
+        undefined,
         user.data.user.email!,
         email,
         password,

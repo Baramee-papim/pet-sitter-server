@@ -13,9 +13,9 @@ const OwnerMiddleware = {
 
     if (
       !(
-        (typeof page === "undefined" ||
+        (page === undefined ||
           (Number.isInteger(parsedPage) && parsedPage > 0)) &&
-        (typeof limit === "undefined" ||
+        (limit === undefined ||
           (Number.isInteger(parsedlimit) && parsedlimit > 0))
       )
     ) {

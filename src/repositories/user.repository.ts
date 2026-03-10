@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import db from "../db/db";
 import { petSitters, users } from "../db/schema";
-import { UserRole } from "../types/user";
+import { UserRole, UserStatus } from "../types/user";
 
 const UserRepository = {
   getById: async (userId: string) => {
@@ -46,10 +46,11 @@ const UserRepository = {
     idNumber: string | null | undefined,
     dateOfBirth: string | null | undefined,
     email: string | undefined,
+    status: UserStatus | undefined,
   ) => {
     await db
       .update(users)
-      .set({ name, phone, profileImgUrl, idNumber, dateOfBirth, email })
+      .set({ name, phone, profileImgUrl, idNumber, dateOfBirth, email, status })
       .where(eq(users.userId, userId));
   },
 };

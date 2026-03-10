@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import AddressService from "../services/address.service";
+import { DistrictIdParams, ProvinceIdParams } from "../types/address";
 
 const AddressController = {
   getProvinces: async (req: Request, res: Response) => {
@@ -12,7 +13,10 @@ const AddressController = {
     }
   },
 
-  getDistrictsByProvince: async (req: Request, res: Response) => {
+  getDistrictsByProvince: async (
+    req: Request<ProvinceIdParams>,
+    res: Response,
+  ) => {
     const provinceId = Number(req.params.provinceId);
     if (isNaN(provinceId)) {
       return res.status(400).json({ error: "Invalid province ID" });
@@ -29,7 +33,10 @@ const AddressController = {
     }
   },
 
-  getSubDistrictsByDistrict: async (req: Request, res: Response) => {
+  getSubDistrictsByDistrict: async (
+    req: Request<DistrictIdParams>,
+    res: Response,
+  ) => {
     const districtId = Number(req.params.districtId);
     if (isNaN(districtId)) {
       return res.status(400).json({ error: "Invalid district ID" });

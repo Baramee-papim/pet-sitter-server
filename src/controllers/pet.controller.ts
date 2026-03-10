@@ -7,11 +7,12 @@ import { PetBody, PetIdParams } from "../types/pet";
 const PetController = {
   getPets: async (req: Request, res: Response) => {
     const token = req.headers.authorization?.split(" ")[1];
-    let result;
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
+
+    let result;
 
     try {
       const user = await AuthService.getUser(token);
@@ -37,13 +38,14 @@ const PetController = {
   },
 
   getPetById: async (req: Request<PetIdParams>, res: Response) => {
-    const petId = Number(req.params.petId);
     const token = req.headers.authorization?.split(" ")[1];
-    let result;
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
+
+    const petId = Number(req.params.petId);
+    let result;
 
     try {
       const user = await AuthService.getUser(token);
@@ -92,8 +94,14 @@ const PetController = {
   },
 
   createPet: async (req: Request<{}, {}, { body: string }>, res: Response) => {
-    const file = req.file!;
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
     const body: PetBody = JSON.parse(req.body.body);
+
     const {
       petName,
       petTypeId,
@@ -104,11 +112,8 @@ const PetController = {
       weight,
       about,
     } = body;
-    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized: Token missing" });
-    }
+    const file = req.file!;
 
     try {
       const user = await AuthService.getUser(token);
@@ -122,7 +127,7 @@ const PetController = {
         dateOfBirth,
         color.trim(),
         String(weight),
-        about ? about.trim() : about,
+        about ? about.trim() : null,
         file,
       );
     } catch (error) {
@@ -141,9 +146,15 @@ const PetController = {
     req: Request<PetIdParams, {}, { body: string }>,
     res: Response,
   ) => {
-    const file = req.file;
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
     const petId = Number(req.params.petId);
-    const body: PetBody = JSON.parse(req.body.body);
+    const body: Partial<PetBody> = JSON.parse(req.body.body);
+
     const {
       petName,
       petTypeId,
@@ -154,11 +165,8 @@ const PetController = {
       weight,
       about,
     } = body;
-    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized: Token missing" });
-    }
+    const file = req.file;
 
     try {
       const user = await AuthService.getUser(token);
@@ -166,18 +174,14 @@ const PetController = {
       await PetService.updatePet(
         user.data.user.id,
         petId,
-        petName.trim(),
+        petName ? petName.trim() : undefined,
         petTypeId,
         sex,
-        breed.trim(),
+        breed ? breed.trim() : undefined,
         dateOfBirth,
-        color.trim(),
-        String(weight),
-        about
-          ? about.trim()
-          : about === "" || about === null
-          ? null
-          : undefined,
+        color ? color.trim() : undefined,
+        weight ? String(weight) : undefined,
+        about ? about.trim() : about,
         file,
       );
     } catch (error) {
@@ -193,12 +197,13 @@ const PetController = {
   },
 
   deletePet: async (req: Request<PetIdParams>, res: Response) => {
-    const petId = Number(req.params.petId);
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
+
+    const petId = Number(req.params.petId);
 
     try {
       const user = await AuthService.getUser(token);

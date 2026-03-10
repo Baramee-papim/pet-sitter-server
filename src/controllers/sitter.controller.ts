@@ -43,6 +43,7 @@ const SitterController = {
         petType,
         rating,
         experience,
+        "Approved",
       );
     } catch {
       return res.status(500).json({ error: "Internal server error" });
@@ -53,18 +54,22 @@ const SitterController = {
       totalPages: result.totalPages,
       currentPage: page,
       limit: limit,
-      sitters: result.petSitters.map((petSitter) => ({
-        id: petSitter.petSitterId,
-        sitter: petSitter.sitter,
-        imgUrl: petSitter.petSitterImage,
-        tradeName: petSitter.tradeName,
-        rating: petSitter.ratingAvg,
-        petTypes: petSitter.petTypes,
-        latitude: petSitter.latitude,
-        longitude: petSitter.longitude,
-        province: petSitter.province,
-        district: petSitter.district,
-      })),
+      sitters: result.petSitters.map((petSitter) => {
+        const { name, profileImgUrl } = petSitter.sitter;
+
+        return {
+          id: petSitter.petSitterId,
+          sitter: { name, profileImgUrl },
+          imgUrl: petSitter.petSitterImage,
+          tradeName: petSitter.tradeName,
+          rating: petSitter.ratingAvg,
+          petTypes: petSitter.petTypes,
+          latitude: petSitter.latitude,
+          longitude: petSitter.longitude,
+          province: petSitter.province,
+          district: petSitter.district,
+        };
+      }),
     };
 
     return res.status(200).json(sittersResponse);
@@ -85,9 +90,11 @@ const SitterController = {
       return res.status(500).json({ error: "Internal server error" });
     }
 
+    const { name, profileImgUrl } = result.sitter;
+
     const sitterResponse = {
       id: result.petSitterId,
-      sitter: result.sitter,
+      sitter: { name, profileImgUrl },
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
       experience: result.experience,
@@ -118,13 +125,7 @@ const SitterController = {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
 
-    let body: UpdateSitterBody;
-
-    try {
-      body = JSON.parse(req.body.body);
-    } catch {
-      return res.status(400).json({ error: "Invalid JSON body" });
-    }
+    const body: UpdateSitterBody = JSON.parse(req.body.body);
 
     const {
       experience,
@@ -149,27 +150,15 @@ const SitterController = {
 
       await SitterService.updateSitter(
         user.data.user.id,
-        String(experience),
-        tradeName.trim(),
+        experience ? String(experience) : undefined,
+        tradeName ? tradeName.trim() : undefined,
         petTypeIds,
-        introduction
-          ? introduction.trim()
-          : introduction === "" || introduction === null
-            ? null
-            : undefined,
-        services
-          ? services.trim()
-          : services === "" || services === null
-            ? null
-            : undefined,
-        description
-          ? description.trim()
-          : description === "" || description === null
-            ? null
-            : undefined,
-        address.trim(),
-        String(latitude),
-        String(longitude),
+        introduction ? introduction.trim() : introduction,
+        services ? services.trim() : services,
+        description ? description.trim() : description,
+        address ? address.trim() : undefined,
+        latitude ? String(latitude) : undefined,
+        longitude ? String(longitude) : undefined,
         provinceId,
         districtId,
         subDistrictId,

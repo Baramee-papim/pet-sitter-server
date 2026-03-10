@@ -328,28 +328,6 @@ export const reviews = pgTable(
   ],
 );
 
-export const petSitterImages = pgTable(
-  "pet_sitter_images",
-  {
-    petSitterImageId: serial("pet_sitter_image_id").primaryKey().notNull(),
-    petSitterId: integer("pet_sitter_id").notNull(),
-    imgUrl: text("img_url").notNull(),
-    imageOrder: integer("image_order").notNull().default(0),
-  },
-  (table) => [
-    index("pet_sitter_images_sitter_order_idx").on(
-      table.petSitterId,
-      table.imageOrder,
-    ),
-
-    foreignKey({
-      columns: [table.petSitterId],
-      foreignColumns: [petSitters.petSitterId],
-      name: "pet_sitter_images_pet_sitter_id_fkey",
-    }).onDelete("cascade"),
-  ],
-);
-
 export const banks = pgTable(
   "banks",
   {
@@ -418,6 +396,60 @@ export const pets = pgTable(
   ],
 );
 
+export const bookingsPets = pgTable(
+  "bookings_pets",
+  {
+    bookingPetId: serial("booking_pet_id").primaryKey().notNull(),
+    bookingId: integer("booking_id").notNull(),
+    petId: integer("pet_id"),
+    petTypeId: integer("pet_type_id").notNull(),
+    petName: varchar("pet_name", { length: 50 }).notNull(),
+    sex: petSex().notNull(),
+    breed: varchar({ length: 100 }).notNull(),
+    dateOfBirth: date("date_of_birth").notNull(),
+    color: varchar({ length: 100 }).notNull(),
+    weight: numeric({ precision: 5, scale: 2 }).notNull(),
+    about: varchar({ length: 500 }),
+  },
+  (table) => [
+    index("bookings_pets_booking_id_idx").using(
+      "btree",
+      table.bookingId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("bookings_pets_pet_id_idx").using(
+      "btree",
+      table.petId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("bookings_pets_pet_type_id_idx").using(
+      "btree",
+      table.petTypeId.asc().nullsLast().op("int4_ops"),
+    ),
+    foreignKey({
+      columns: [table.bookingId],
+      foreignColumns: [bookings.bookingId],
+      name: "bookings_pets_booking_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.petId],
+      foreignColumns: [pets.petId],
+      name: "bookings_pets_pet_id_fkey",
+    }).onDelete("set null"),
+    foreignKey({
+      columns: [table.petTypeId],
+      foreignColumns: [petTypes.petTypeId],
+      name: "bookings_pets_pet_type_id_fkey",
+    }).onDelete("restrict"),
+    check(
+      "bookings_pets_date_of_birth_check",
+      sql`(date_of_birth IS NULL) OR (date_of_birth <= CURRENT_DATE)`,
+    ),
+    check(
+      "bookings_pets_weight_check",
+      sql`(weight IS NULL) OR (weight > (0)::numeric)`,
+    ),
+  ],
+);
+
 export const petSittersPetTypes = pgTable(
   "pet_sitters_pet_types",
   {
@@ -450,47 +482,26 @@ export const petSittersPetTypes = pgTable(
   ],
 );
 
-export const bookingPets = pgTable(
-  "booking_pets",
+export const petSitterImages = pgTable(
+  "pet_sitter_images",
   {
-    bookingId: integer("booking_id").notNull(),
-    petId: integer("pet_id").notNull(),
-    petTypeId: integer("pet_type_id").notNull(),
-    petName: varchar("pet_name", { length: 50 }).notNull(),
-    sex: petSex().notNull(),
-    breed: varchar({ length: 100 }).notNull(),
-    dateOfBirth: date("date_of_birth").notNull(),
-    color: varchar({ length: 100 }).notNull(),
-    weight: numeric({ precision: 5, scale: 2 }).notNull(),
-    about: varchar({ length: 500 }),
+    petSitterId: integer("pet_sitter_id").notNull(),
+    imageOrder: integer("image_order").default(0).notNull(),
+    imgUrl: text("img_url").notNull(),
   },
   (table) => [
+    index("pet_sitter_images_pet_sitter_id_idx").using(
+      "btree",
+      table.petSitterId.asc().nullsLast().op("int4_ops"),
+    ),
     foreignKey({
-      columns: [table.bookingId],
-      foreignColumns: [bookings.bookingId],
-      name: "booking_pets_booking_id_fkey",
+      columns: [table.petSitterId],
+      foreignColumns: [petSitters.petSitterId],
+      name: "pet_sitter_images_pet_sitter_id_fkey",
     }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.petId],
-      foreignColumns: [pets.petId],
-      name: "booking_pets_pet_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.petTypeId],
-      foreignColumns: [petTypes.petTypeId],
-      name: "booking_pets_pet_type_id_fkey",
-    }).onDelete("restrict"),
     primaryKey({
-      columns: [table.bookingId, table.petId],
-      name: "booking_pets_pets_pkey",
+      columns: [table.petSitterId, table.imageOrder],
+      name: "pet_sitter_images_pkey",
     }),
-    check(
-      "booking_pets_date_of_birth_check",
-      sql`(date_of_birth IS NULL) OR (date_of_birth <= CURRENT_DATE)`,
-    ),
-    check(
-      "booking_pets_weight_check",
-      sql`(weight IS NULL) OR (weight > (0)::numeric)`,
-    ),
   ],
 );

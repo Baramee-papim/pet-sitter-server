@@ -14,6 +14,12 @@ SitterRoute.get(
   SitterController.getSitters,
 );
 
+SitterRoute.get(
+  "/:sitterId",
+  [SitterMiddleware.sitterId],
+  SitterController.getSitterById,
+);
+
 SitterRoute.put(
   "/user",
   [
@@ -24,17 +30,13 @@ SitterRoute.put(
   UserController.updateUser,
 );
 
-SitterRoute.get(
-  "/:sitterId",
-  [SitterMiddleware.sitterId],
-  SitterController.getSitterById,
-);
-
 SitterRoute.put(
-  "/:sitterId",
-  UploadMiddleware.uploadImages,
-  SitterMiddleware.updateSitterBody,
-  ProtectMiddleware.sitter,
+  "/",
+  [
+    UploadMiddleware.uploadImages,
+    SitterMiddleware.updateSitterBody,
+    ProtectMiddleware.sitter,
+  ],
   SitterController.updateSitter,
 );
 
