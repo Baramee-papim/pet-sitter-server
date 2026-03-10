@@ -38,6 +38,10 @@ const UserMiddleware = {
       return res.status(400).json({ error: "Invalid JSON body" });
     }
 
+    if (!Object.keys(body).length) {
+      return res.status(400).json({ error: "No fields to update" });
+    }
+
     const {
       name,
       phone,
@@ -48,45 +52,52 @@ const UserMiddleware = {
       removeProfileImg,
     } = body;
 
-    // Check for required fields
-    if (!name) {
-      return res.status(400).json({ error: "Name is required" });
-    }
-
-    if (!phone) {
-      return res.status(400).json({ error: "Phone is required" });
+    if (
+      !(
+        name !== undefined ||
+        phone !== undefined ||
+        idNumber !== undefined ||
+        dateOfBirth !== undefined ||
+        email !== undefined
+      )
+    ) {
+      return res.status(400).json({ error: "No fields to update" });
     }
 
     // Type validations
-    if (typeof name !== "string") {
-      return res.status(400).json({ error: "Name must be a string" });
+    if (name !== undefined) {
+      if (typeof name !== "string") {
+        return res.status(400).json({ error: "Name must be a string" });
+      }
+
+      if (!nameRegex.test(name)) {
+        return res.status(400).json({ error: "Invalid name" });
+      }
+
+      if (name.length < 2) {
+        return res.status(400).json({
+          error: "Name must be at least 2 characters long",
+        });
+      }
+
+      if (name.length > 100) {
+        return res.status(400).json({
+          error: "Name must be less than 100 characters",
+        });
+      }
     }
 
-    if (!nameRegex.test(name)) {
-      return res.status(400).json({ error: "Invalid name" });
+    if (phone !== undefined) {
+      if (typeof phone !== "string") {
+        return res.status(400).json({ error: "Phone must be a string" });
+      }
+
+      if (!phoneRegex.test(phone)) {
+        return res.status(400).json({ error: "Invalid phone number" });
+      }
     }
 
-    if (name.length < 2) {
-      return res.status(400).json({
-        error: "Name must be at least 2 characters long",
-      });
-    }
-
-    if (name.length > 100) {
-      return res.status(400).json({
-        error: "Name must be less than 100 characters",
-      });
-    }
-
-    if (typeof phone !== "string") {
-      return res.status(400).json({ error: "Phone must be a string" });
-    }
-
-    if (!phoneRegex.test(phone)) {
-      return res.status(400).json({ error: "Invalid phone number" });
-    }
-
-    if (idNumber !== undefined && idNumber !== null && idNumber !== "") {
+    if (idNumber !== undefined && idNumber !== null) {
       if (typeof idNumber !== "string") {
         return res.status(400).json({ error: "ID number must be a string" });
       }
@@ -96,11 +107,7 @@ const UserMiddleware = {
       }
     }
 
-    if (
-      dateOfBirth !== undefined &&
-      dateOfBirth !== null &&
-      dateOfBirth !== ""
-    ) {
+    if (dateOfBirth !== undefined && dateOfBirth !== null) {
       if (!dateRegex.test(dateOfBirth)) {
         return res.status(400).json({ error: "Invalid date of birth" });
       }

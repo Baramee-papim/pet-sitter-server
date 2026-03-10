@@ -12,8 +12,8 @@ export interface UserIdParams extends ParamsDictionary {
 }
 
 export interface UpdateUserBody {
-  name: string;
-  phone: string;
+  name?: string;
+  phone?: string;
   idNumber?: string | null;
   dateOfBirth?: string | null;
   email?: string;

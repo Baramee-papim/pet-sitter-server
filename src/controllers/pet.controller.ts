@@ -153,7 +153,7 @@ const PetController = {
     }
 
     const petId = Number(req.params.petId);
-    const body: PetBody = JSON.parse(req.body.body);
+    const body: Partial<PetBody> = JSON.parse(req.body.body);
 
     const {
       petName,
@@ -174,21 +174,19 @@ const PetController = {
       await PetService.updatePet(
         user.data.user.id,
         petId,
-        petName.trim(),
+        petName ? petName.trim() : undefined,
         petTypeId,
         sex,
-        breed.trim(),
+        breed ? breed.trim() : undefined,
         dateOfBirth,
-        color.trim(),
-        String(weight),
-        about
-          ? about.trim()
-          : about === "" || about === null
-          ? null
-          : undefined,
+        color ? color.trim() : undefined,
+        weight ? String(weight) : undefined,
+        about ? about.trim() : about,
         file,
       );
     } catch (error) {
+      console.log(error);
+
       // Client error from service
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({ error: error.message });

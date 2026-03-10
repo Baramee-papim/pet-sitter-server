@@ -113,149 +113,183 @@ const SitterMiddleware = {
       subDistrictId,
     } = body;
 
-    // Check for required fields
-    if (experience === undefined || experience === null) {
-      return res.status(400).json({ error: "Experience is required" });
-    }
-
-    if (!tradeName) {
-      return res.status(400).json({ error: "Trade name is required" });
-    }
-
-    if (!petTypeIds) {
-      return res.status(400).json({ error: "Pet type IDs are required" });
-    }
-
-    if (!address) {
-      return res.status(400).json({ error: "Address is required" });
-    }
-
-    if (latitude === undefined || latitude === null) {
-      return res.status(400).json({ error: "Latitude is required" });
-    }
-
-    if (longitude === undefined || longitude === null) {
-      return res.status(400).json({ error: "Longitude is required" });
-    }
-
-    if (provinceId === undefined || provinceId === null) {
-      return res.status(400).json({ error: "Province ID is required" });
-    }
-
-    if (districtId === undefined || districtId === null) {
-      return res.status(400).json({ error: "District ID is required" });
-    }
-
-    if (subDistrictId === undefined || subDistrictId === null) {
-      return res.status(400).json({ error: "Subdistrict ID is required" });
+    if (
+      !(
+        experience !== undefined ||
+        tradeName !== undefined ||
+        petTypeIds !== undefined ||
+        introduction !== undefined ||
+        services !== undefined ||
+        description !== undefined ||
+        address !== undefined ||
+        latitude !== undefined ||
+        longitude !== undefined ||
+        provinceId !== undefined ||
+        districtId !== undefined ||
+        subDistrictId !== undefined
+      )
+    ) {
+      return res.status(400).json({ error: "No fields to update" });
     }
 
     // Type validations
-    if (typeof experience !== "number") {
-      return res.status(400).json({ error: "Experience must be a number" });
-    }
+    if (experience !== undefined) {
+      if (typeof experience !== "number") {
+        return res.status(400).json({ error: "Experience must be a number" });
+      }
 
-    if (experience < 0) {
-      return res.status(400).json({
-        error: "Experience must be greater than 0",
-      });
-    }
-
-    if (experience >= 100) {
-      return res.status(400).json({
-        error: "Experience must be less than 100",
-      });
-    }
-
-    if (String(experience).split(".")[1]?.length > 1) {
-      return res.status(400).json({
-        error: "Experience must be a multiple of 0.1",
-      });
-    }
-
-    if (typeof tradeName !== "string") {
-      return res.status(400).json({ error: "Trade name must be a string" });
-    }
-
-    if (tradeName.length < 5) {
-      return res.status(400).json({
-        error: "Trade name must be at least 5 characters long",
-      });
-    }
-
-    if (tradeName.length > 50) {
-      return res.status(400).json({
-        error: "Trade name must be less than 50 characters",
-      });
-    }
-
-    if (!Array.isArray(petTypeIds)) {
-      return res.status(400).json({
-        error: "Pet type IDs must be an array",
-      });
-    }
-
-    petTypeIds.forEach((petTypeId) => {
-      if (typeof petTypeId !== "number") {
+      if (experience < 0) {
         return res.status(400).json({
-          error: "Pet type IDs must be an array of numbers",
+          error: "Experience must be greater than 0",
         });
       }
-    });
 
-    if (typeof address !== "string") {
-      return res.status(400).json({ error: "Address name must be a string" });
+      if (experience >= 100) {
+        return res.status(400).json({
+          error: "Experience must be less than 100",
+        });
+      }
+
+      if (String(experience).split(".")[1]?.length > 1) {
+        return res.status(400).json({
+          error: "Experience must be a multiple of 0.1",
+        });
+      }
     }
 
-    if (address.length < 10) {
-      return res.status(400).json({
-        error: "Address name must be at least 10 characters long",
+    if (tradeName !== undefined) {
+      if (typeof tradeName !== "string") {
+        return res.status(400).json({ error: "Trade name must be a string" });
+      }
+
+      if (tradeName.length < 5) {
+        return res.status(400).json({
+          error: "Trade name must be at least 5 characters long",
+        });
+      }
+
+      if (tradeName.length > 50) {
+        return res.status(400).json({
+          error: "Trade name must be less than 50 characters",
+        });
+      }
+    }
+
+    if (petTypeIds !== undefined) {
+      if (!Array.isArray(petTypeIds)) {
+        return res.status(400).json({
+          error: "Pet type IDs must be an array",
+        });
+      }
+
+      petTypeIds.forEach((petTypeId) => {
+        if (typeof petTypeId !== "number") {
+          return res.status(400).json({
+            error: "Pet type IDs must be an array of numbers",
+          });
+        }
       });
     }
 
-    if (address.length > 100) {
-      return res.status(400).json({
-        error: "Address name must be less than 100 characters",
-      });
+    if (address !== undefined) {
+      if (typeof address !== "string") {
+        return res.status(400).json({ error: "Address name must be a string" });
+      }
+
+      if (address.length < 10) {
+        return res.status(400).json({
+          error: "Address name must be at least 10 characters long",
+        });
+      }
+
+      if (address.length > 100) {
+        return res.status(400).json({
+          error: "Address name must be less than 100 characters",
+        });
+      }
     }
 
-    if (typeof latitude !== "number") {
-      return res.status(400).json({ error: "Latitude must be a number" });
+    if (latitude !== undefined) {
+      if (typeof latitude !== "number") {
+        return res.status(400).json({ error: "Latitude must be a number" });
+      }
+
+      if (latitude < -90 || latitude > 90) {
+        return res.status(400).json({
+          error: "Latitude must be between -90 and 90",
+        });
+      }
     }
 
-    if (latitude < -90 || latitude > 90) {
-      return res.status(400).json({
-        error: "Latitude must be between -90 and 90",
-      });
+    if (longitude !== undefined) {
+      if (typeof longitude !== "number") {
+        return res.status(400).json({ error: "Longitude must be a number" });
+      }
+
+      if (longitude < -180 || longitude > 180) {
+        return res.status(400).json({
+          error: "Longitude must be between -180 and 180",
+        });
+      }
     }
 
-    if (typeof longitude !== "number") {
-      return res.status(400).json({ error: "Longitude must be a number" });
+    if (provinceId !== undefined) {
+      if (typeof provinceId !== "number") {
+        return res.status(400).json({ error: "Province ID must be a number" });
+      }
+
+      if (Number.isInteger(provinceId) && provinceId <= 0) {
+        return res.status(400).json({
+          error: "Province ID must be a positive integer",
+        });
+      }
+
+      if (provinceId < 10 || provinceId > 96) {
+        return res.status(400).json({
+          error: "Province ID must be between 10 and 96",
+        });
+      }
     }
 
-    if (longitude < -180 || longitude > 180) {
-      return res.status(400).json({
-        error: "Longitude must be between -180 and 180",
-      });
+    if (districtId !== undefined) {
+      if (typeof districtId !== "number") {
+        return res.status(400).json({ error: "District ID must be a number" });
+      }
+
+      if (Number.isInteger(districtId) && districtId <= 0) {
+        return res.status(400).json({
+          error: "District ID must be a positive integer",
+        });
+      }
+
+      if (districtId < 1001 || districtId > 9699) {
+        return res.status(400).json({
+          error: "District ID must be between 1001 and 9699",
+        });
+      }
     }
 
-    if (typeof provinceId !== "number") {
-      return res.status(400).json({ error: "Province ID must be a number" });
+    if (subDistrictId !== undefined) {
+      if (typeof subDistrictId !== "number") {
+        return res.status(400).json({
+          error: "Subdistrict ID must be a number",
+        });
+      }
+
+      if (Number.isInteger(subDistrictId) && subDistrictId <= 0) {
+        return res.status(400).json({
+          error: "Subdistrict ID must be a positive integer",
+        });
+      }
+
+      if (subDistrictId < 100101 || subDistrictId > 969999) {
+        return res.status(400).json({
+          error: "Subdistrict ID must be between 100101 and 969999",
+        });
+      }
     }
 
-    if (typeof districtId !== "number") {
-      return res.status(400).json({ error: "District ID must be a number" });
-    }
-
-    if (typeof subDistrictId !== "number") {
-      return res.status(400).json({ error: "Subdistrict ID must be a number" });
-    }
-
-    if (
-      introduction !== undefined &&
-      introduction !== null &&
-      introduction !== ""
-    ) {
+    if (introduction !== undefined && introduction !== null) {
       if (typeof introduction !== "string") {
         return res.status(400).json({ error: "Introduction must be a string" });
       }
@@ -267,7 +301,7 @@ const SitterMiddleware = {
       }
     }
 
-    if (services !== undefined && services !== null && services !== "") {
+    if (services !== undefined && services !== null) {
       if (typeof services !== "string") {
         return res.status(400).json({ error: "Services must be a string" });
       }
@@ -279,11 +313,7 @@ const SitterMiddleware = {
       }
     }
 
-    if (
-      description !== undefined &&
-      description !== null &&
-      description !== ""
-    ) {
+    if (description !== undefined && description !== null) {
       if (typeof description !== "string") {
         return res.status(400).json({ error: "Description must be a string" });
       }

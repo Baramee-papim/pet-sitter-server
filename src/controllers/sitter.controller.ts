@@ -150,27 +150,15 @@ const SitterController = {
 
       await SitterService.updateSitter(
         user.data.user.id,
-        String(experience),
-        tradeName.trim(),
+        experience ? String(experience) : undefined,
+        tradeName ? tradeName.trim() : undefined,
         petTypeIds,
-        introduction
-          ? introduction.trim()
-          : introduction === "" || introduction === null
-          ? null
-          : undefined,
-        services
-          ? services.trim()
-          : services === "" || services === null
-          ? null
-          : undefined,
-        description
-          ? description.trim()
-          : description === "" || description === null
-          ? null
-          : undefined,
-        address.trim(),
-        String(latitude),
-        String(longitude),
+        introduction ? introduction.trim() : introduction,
+        services ? services.trim() : services,
+        description ? description.trim() : description,
+        address ? address.trim() : undefined,
+        latitude ? String(latitude) : undefined,
+        longitude ? String(longitude) : undefined,
         provinceId,
         districtId,
         subDistrictId,

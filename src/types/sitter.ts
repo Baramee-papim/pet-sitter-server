@@ -24,18 +24,18 @@ export interface GetSittersQuery {
 }
 
 export interface UpdateSitterBody {
-  experience: number;
-  tradeName: string;
-  petTypeIds: number[];
+  experience?: number;
+  tradeName?: string;
+  petTypeIds?: number[];
   introduction?: string | null;
   services?: string | null;
   description?: string | null;
-  address: string;
-  latitude: number;
-  longitude: number;
-  provinceId: number;
-  districtId: number;
-  subDistrictId: number;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  provinceId?: number;
+  districtId?: number;
+  subDistrictId?: number;
   existingImages: {
     url: string;
     order: number;

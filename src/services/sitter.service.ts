@@ -98,7 +98,7 @@ const SitterService = {
     userId: string,
     experience: string | null | undefined,
     tradeName: string | null | undefined,
-    petTypeIds: number[],
+    petTypeIds: number[] | undefined,
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
@@ -111,15 +111,17 @@ const SitterService = {
     files: Express.Multer.File[],
     existingImages: { url: string; order: number }[],
   ) => {
-    const lookupPetTypeIds = (await PetRepository.getTypes()).map(
-      (petType) => petType.petTypeId,
-    );
+    if (petTypeIds) {
+      const lookupPetTypeIds = (await PetRepository.getTypes()).map(
+        (petType) => petType.petTypeId,
+      );
 
-    petTypeIds.forEach((petTypeId) => {
-      if (!lookupPetTypeIds.includes(petTypeId)) {
-        throw new AppError(404, "Pet type not found");
-      }
-    });
+      petTypeIds.forEach((petTypeId) => {
+        if (!lookupPetTypeIds.includes(petTypeId)) {
+          throw new AppError(404, "Pet type not found");
+        }
+      });
+    }
 
     const sitterRecord = await SitterRepository.getByUserId(userId);
     if (!sitterRecord) {

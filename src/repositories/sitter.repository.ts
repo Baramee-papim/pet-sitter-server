@@ -253,7 +253,7 @@ const SitterRepository = {
     experience: string | null | undefined,
     tradeName: string | null | undefined,
     imgUrls: string[],
-    petTypeIds: number[],
+    petTypeIds: number[] | undefined,
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
@@ -282,16 +282,18 @@ const SitterRepository = {
         })
         .where(eq(petSitters.petSitterId, sitterId));
 
-      await tx
-        .delete(petSittersPetTypes)
-        .where(eq(petSittersPetTypes.petSitterId, sitterId));
+      if (petTypeIds) {
+        await tx
+          .delete(petSittersPetTypes)
+          .where(eq(petSittersPetTypes.petSitterId, sitterId));
 
-      await tx.insert(petSittersPetTypes).values(
-        petTypeIds.map((petTypeId) => ({
-          petSitterId: sitterId,
-          petTypeId,
-        })),
-      );
+        await tx.insert(petSittersPetTypes).values(
+          petTypeIds.map((petTypeId) => ({
+            petSitterId: sitterId,
+            petTypeId,
+          })),
+        );
+      }
 
       await tx
         .delete(petSitterImages)
