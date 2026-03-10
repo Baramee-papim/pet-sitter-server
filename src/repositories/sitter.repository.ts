@@ -153,7 +153,9 @@ const SitterRepository = {
         district: { columns: { name: true } },
         petSittersPetTypes: {
           columns: {},
-          with: { petType: { columns: { name: true } } },
+          with: {
+            petType: { columns: { name: true } },
+          },
           orderBy: [asc(petTypes.petTypeId)],
         },
       },
@@ -176,7 +178,15 @@ const SitterRepository = {
     return { result, totalPetSitters };
   },
 
-  getById: async (sitterId: number) => {
+  getById: async (sitterId: number, onlyApproved: boolean = true) => {
+    const filters = [];
+
+    if (onlyApproved) {
+      filters.push(eq(petSitters.status, "Approved"));
+    }
+
+    const whereClause = and(eq(petSitters.petSitterId, sitterId), ...filters);
+
     return db.query.petSitters.findFirst({
       columns: {
         petSitterId: true,
@@ -190,9 +200,20 @@ const SitterRepository = {
         longitude: true,
         reviewCount: true,
         ratingAvg: true,
+        status: true,
       },
       with: {
-        user: { columns: { name: true, profileImgUrl: true } },
+        user: {
+          columns: {
+            name: true,
+            phone: true,
+            profileImgUrl: true,
+            idNumber: true,
+            dateOfBirth: true,
+            email: true,
+            status: true,
+          },
+        },
         petSitterImages: {
           columns: { imgUrl: true },
           orderBy: [asc(petSitterImages.imageOrder)],
@@ -202,11 +223,13 @@ const SitterRepository = {
         subDistrict: { columns: { name: true, postCode: true } },
         petSittersPetTypes: {
           columns: {},
-          with: { petType: { columns: { name: true } } },
+          with: {
+            petType: { columns: { name: true } },
+          },
           orderBy: [asc(petTypes.petTypeId)],
         },
       },
-      where: (sitter) => eq(sitter.petSitterId, sitterId),
+      where: whereClause,
     });
   },
 

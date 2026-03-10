@@ -1,15 +1,26 @@
 import { NextFunction, Request, Response } from "express";
-import { UpdateUserBody } from "../types/user";
+import { UpdateUserBody, UserIdParams } from "../types/user";
 import {
   dateRegex,
   emailRegex,
   idNumberRegex,
   nameRegex,
   phoneRegex,
+  uuidRegex,
 } from "../utils/regex";
 import validateIdNumber from "../utils/validateIdNumber";
 
 const UserMiddleware = {
+  userId: (req: Request<UserIdParams>, res: Response, next: NextFunction) => {
+    const userId = req.params.userId;
+
+    if (!uuidRegex.test(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    next();
+  },
+
   updateUserBody: (
     req: Request<{}, {}, { body: string }>,
     res: Response,

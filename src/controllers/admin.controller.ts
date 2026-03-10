@@ -1,8 +1,12 @@
 import { format } from "date-fns";
 import { Request, Response } from "express";
+import AppError from "../errors/AppError";
 import OwnerService from "../services/owner.service";
 import SitterService from "../services/sitter.service";
+import UserService from "../services/user.service";
 import { AdminGetOwnersQuery, AdminGetSittersQuery } from "../types/admin";
+import { SitterIdParams } from "../types/sitter";
+import { UserIdParams } from "../types/user";
 
 const AdminController = {
   getOwners: async (
@@ -39,6 +43,36 @@ const AdminController = {
     };
 
     return res.status(200).json(ownersResponse);
+  },
+
+  getOwnerByUserId: async (req: Request<UserIdParams>, res: Response) => {
+    const userId = req.params.userId;
+    let result;
+
+    try {
+      result = await OwnerService.getOwnerByUserId(userId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const ownerResponse = {
+      id: result.userId,
+      name: result.name,
+      phone: result.phone,
+      profileImgUrl: result.profileImgUrl,
+      idNumber: result.idNumber,
+      dateOfBirth: result.dateOfBirth,
+      email: result.email,
+      status: result.status,
+      pets: result.pets,
+    };
+
+    return res.status(200).json(ownerResponse);
   },
 
   getSitters: async (
@@ -97,6 +131,100 @@ const AdminController = {
     };
 
     return res.status(200).json(sittersResponse);
+  },
+
+  getSitterById: async (req: Request<SitterIdParams>, res: Response) => {
+    const sitterId = Number(req.params.sitterId);
+    let result;
+
+    try {
+      result = await SitterService.getSitterById(sitterId, false);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const sitterResponse = {
+      id: result.petSitterId,
+      sitter: result.sitter,
+      imgUrls: result.petSitterImages,
+      tradeName: result.tradeName,
+      experience: result.experience,
+      petTypes: result.petTypes,
+      introduction: result.introduction,
+      services: result.services,
+      description: result.description,
+      address: result.address,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      province: result.province,
+      district: result.district,
+      subDistrict: result.subDistrict,
+      postCode: result.postCode,
+      status: result.status,
+    };
+
+    return res.status(200).json(sitterResponse);
+  },
+
+  banUser: async (req: Request<UserIdParams>, res: Response) => {
+    const userId = req.params.userId;
+
+    try {
+      await UserService.updateUser(
+        userId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "Banned",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res.status(200).json({ message: "User banned successfully" });
+  },
+
+  unbanUser: async (req: Request<UserIdParams>, res: Response) => {
+    const userId = req.params.userId;
+
+    try {
+      await UserService.updateUser(
+        userId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "Normal",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res.status(200).json({ message: "User unbanned successfully" });
   },
 };
 

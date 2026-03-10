@@ -59,8 +59,8 @@ const SitterService = {
     };
   },
 
-  getSitterById: async (sitterId: number) => {
-    const result = await SitterRepository.getById(sitterId);
+  getSitterById: async (sitterId: number, onlyApproved: boolean = true) => {
+    const result = await SitterRepository.getById(sitterId, onlyApproved);
 
     if (!result) {
       throw new AppError(404, "Sitter not found");
@@ -70,7 +70,12 @@ const SitterService = {
       ...result,
       sitter: {
         name: result.user.name,
+        phone: result.user.phone,
         profileImgUrl: result.user.profileImgUrl,
+        idNumber: result.user.idNumber,
+        dateOfBirth: result.user.dateOfBirth,
+        email: result.user.email,
+        status: result.user.status,
       },
       petSitterImages: result.petSitterImages.map(
         (petSitterImage) => petSitterImage.imgUrl,
@@ -91,18 +96,18 @@ const SitterService = {
 
   updateSitter: async (
     userId: string,
-    experience: string,
-    tradeName: string,
+    experience: string | null | undefined,
+    tradeName: string | null | undefined,
     petTypeIds: number[],
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
-    address: string,
-    latitude: string,
-    longitude: string,
-    provinceId: number,
-    districtId: number,
-    subDistrictId: number,
+    address: string | null | undefined,
+    latitude: string | null | undefined,
+    longitude: string | null | undefined,
+    provinceId: number | null | undefined,
+    districtId: number | null | undefined,
+    subDistrictId: number | null | undefined,
     files: Express.Multer.File[],
     existingImages: { url: string; order: number }[],
   ) => {
@@ -123,7 +128,9 @@ const SitterService = {
     const sitterId = sitterRecord.petSitterId;
 
     const lookupSitter = {
-      tradeName: await SitterRepository.getByTradeName(tradeName),
+      tradeName: tradeName
+        ? await SitterRepository.getByTradeName(tradeName)
+        : null,
     };
 
     if (

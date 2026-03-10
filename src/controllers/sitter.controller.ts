@@ -54,18 +54,22 @@ const SitterController = {
       totalPages: result.totalPages,
       currentPage: page,
       limit: limit,
-      sitters: result.petSitters.map((petSitter) => ({
-        id: petSitter.petSitterId,
-        sitter: petSitter.sitter,
-        imgUrl: petSitter.petSitterImage,
-        tradeName: petSitter.tradeName,
-        rating: petSitter.ratingAvg,
-        petTypes: petSitter.petTypes,
-        latitude: petSitter.latitude,
-        longitude: petSitter.longitude,
-        province: petSitter.province,
-        district: petSitter.district,
-      })),
+      sitters: result.petSitters.map((petSitter) => {
+        const { name, profileImgUrl } = petSitter.sitter;
+
+        return {
+          id: petSitter.petSitterId,
+          sitter: { name, profileImgUrl },
+          imgUrl: petSitter.petSitterImage,
+          tradeName: petSitter.tradeName,
+          rating: petSitter.ratingAvg,
+          petTypes: petSitter.petTypes,
+          latitude: petSitter.latitude,
+          longitude: petSitter.longitude,
+          province: petSitter.province,
+          district: petSitter.district,
+        };
+      }),
     };
 
     return res.status(200).json(sittersResponse);
@@ -86,9 +90,11 @@ const SitterController = {
       return res.status(500).json({ error: "Internal server error" });
     }
 
+    const { name, profileImgUrl } = result.sitter;
+
     const sitterResponse = {
       id: result.petSitterId,
-      sitter: result.sitter,
+      sitter: { name, profileImgUrl },
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
       experience: result.experience,

@@ -13,7 +13,7 @@ const UserController = {
     }
 
     const body: UpdateUserBody = JSON.parse(req.body.body);
-    
+
     const {
       name,
       phone,
@@ -35,6 +35,7 @@ const UserController = {
         phone,
         idNumber,
         dateOfBirth,
+        undefined,
         user.data.user.email!,
         email,
         password,
