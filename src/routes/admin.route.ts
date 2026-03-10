@@ -3,6 +3,8 @@ import AdminController from "../controllers/admin.controller";
 import AdminMiddleware from "../middlewares/admin.middleware";
 import OwnerMiddleware from "../middlewares/owner.middleware";
 import ProtectMiddleware from "../middlewares/protect.middleware";
+import SitterMiddleware from "../middlewares/sitter.middleware";
+import UserMiddleware from "../middlewares/user.middleware";
 
 const AdminRoute = Router();
 
@@ -14,6 +16,40 @@ AdminRoute.get(
     ProtectMiddleware.admin,
   ],
   AdminController.getOwners,
+);
+
+AdminRoute.get(
+  "/pet-owner/:userId",
+  [UserMiddleware.userId, ProtectMiddleware.admin],
+  AdminController.getOwnerByUserId,
+);
+
+AdminRoute.get(
+  "/pet-sitter",
+  [
+    AdminMiddleware.getSittersQuery,
+    SitterMiddleware.getSittersQuery,
+    ProtectMiddleware.admin,
+  ],
+  AdminController.getSitters,
+);
+
+AdminRoute.get(
+  "/pet-sitter/:sitterId",
+  [SitterMiddleware.sitterId, ProtectMiddleware.admin],
+  AdminController.getSitterById,
+);
+
+AdminRoute.patch(
+  "/ban/:userId",
+  [UserMiddleware.userId, ProtectMiddleware.admin],
+  AdminController.banUser,
+);
+
+AdminRoute.patch(
+  "/unban/:userId",
+  [UserMiddleware.userId, ProtectMiddleware.admin],
+  AdminController.unbanUser,
 );
 
 export default AdminRoute;

@@ -17,7 +17,10 @@ import {
   petSitters,
   petSittersPetTypes,
   petTypes,
+  users,
 } from "../db/schema";
+import { SitterStatus } from "../types/sitter";
+import { UserStatus } from "../types/user";
 
 const SitterRepository = {
   get: async (
@@ -28,11 +31,16 @@ const SitterRepository = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
+    status: SitterStatus | Extract<UserStatus, "Banned"> | null,
+    canFilterByName: boolean = false,
+    canFilterByEmail: boolean = false,
   ) => {
     const offset = (page - 1) * limit;
     const filters = [];
 
     if (keyword) {
+      const keywordFilters = [ilike(petSitters.tradeName, `%${keyword}%`)];
+
       const sitterIdsByPetTypeKeyword = await db
         .selectDistinct({ petSitterId: petSittersPetTypes.petSitterId })
         .from(petSittersPetTypes)
@@ -47,15 +55,33 @@ const SitterRepository = {
       );
 
       if (sitterIdsFromPetTypes.length > 0) {
-        filters.push(
-          or(
-            ilike(petSitters.tradeName, `%${keyword}%`),
-            inArray(petSitters.petSitterId, sitterIdsFromPetTypes),
-          ),
+        keywordFilters.push(
+          inArray(petSitters.petSitterId, sitterIdsFromPetTypes),
         );
-      } else {
-        filters.push(ilike(petSitters.tradeName, `%${keyword}%`));
       }
+
+      if (canFilterByName || canFilterByEmail) {
+        const userKeywordConditions = [];
+        if (canFilterByName) {
+          userKeywordConditions.push(ilike(users.name, `%${keyword}%`));
+        }
+        if (canFilterByEmail) {
+          userKeywordConditions.push(ilike(users.email, `%${keyword}%`));
+        }
+        const sitterIdsByUserKeyword = await db
+          .selectDistinct({ petSitterId: petSitters.petSitterId })
+          .from(petSitters)
+          .innerJoin(users, eq(users.userId, petSitters.userId))
+          .where(or(...userKeywordConditions));
+
+        const ids = sitterIdsByUserKeyword.map((row) => row.petSitterId);
+
+        if (ids.length > 0) {
+          keywordFilters.push(inArray(petSitters.petSitterId, ids));
+        }
+      }
+
+      filters.push(or(...keywordFilters));
     }
 
     if (petType) {
@@ -86,6 +112,22 @@ const SitterRepository = {
       }
     }
 
+    if (status) {
+      if (status === "Banned") {
+        const sitterIdsByBannedStatus = await db
+          .selectDistinct({ petSitterId: petSitters.petSitterId })
+          .from(petSitters)
+          .innerJoin(users, eq(users.userId, petSitters.userId))
+          .where(eq(users.status, "Banned"));
+
+        const ids = sitterIdsByBannedStatus.map((row) => row.petSitterId);
+
+        filters.push(inArray(petSitters.petSitterId, ids));
+      } else {
+        filters.push(eq(petSitters.status, status));
+      }
+    }
+
     const whereClause = filters.length ? and(...filters) : undefined;
 
     const result = await db.query.petSitters.findMany({
@@ -95,15 +137,25 @@ const SitterRepository = {
         latitude: true,
         longitude: true,
         ratingAvg: true,
+        status: true,
       },
       with: {
-        user: { columns: { name: true, profileImgUrl: true } },
+        user: {
+          columns: {
+            name: true,
+            profileImgUrl: true,
+            email: true,
+            status: true,
+          },
+        },
         petSitterImages: { columns: { imgUrl: true } },
         province: { columns: { name: true } },
         district: { columns: { name: true } },
         petSittersPetTypes: {
           columns: {},
-          with: { petType: { columns: { name: true } } },
+          with: {
+            petType: { columns: { name: true } },
+          },
           orderBy: [asc(petTypes.petTypeId)],
         },
       },
@@ -126,8 +178,16 @@ const SitterRepository = {
     return { result, totalPetSitters };
   },
 
-  getById: async (sitterId: number) => {
-    return await db.query.petSitters.findFirst({
+  getById: async (sitterId: number, onlyApproved: boolean = true) => {
+    const filters = [];
+
+    if (onlyApproved) {
+      filters.push(eq(petSitters.status, "Approved"));
+    }
+
+    const whereClause = and(eq(petSitters.petSitterId, sitterId), ...filters);
+
+    return db.query.petSitters.findFirst({
       columns: {
         petSitterId: true,
         tradeName: true,
@@ -140,30 +200,84 @@ const SitterRepository = {
         longitude: true,
         reviewCount: true,
         ratingAvg: true,
+        status: true,
       },
       with: {
-        user: { columns: { name: true, profileImgUrl: true } },
+        user: {
+          columns: {
+            name: true,
+            phone: true,
+            profileImgUrl: true,
+            idNumber: true,
+            dateOfBirth: true,
+            email: true,
+            status: true,
+          },
+        },
         petSitterImages: {
           columns: { imgUrl: true },
-          orderBy: [asc(petSitterImages.imgUrl)],
+          orderBy: [asc(petSitterImages.imageOrder)],
         },
         province: { columns: { name: true } },
         district: { columns: { name: true } },
         subDistrict: { columns: { name: true, postCode: true } },
         petSittersPetTypes: {
           columns: {},
-          with: { petType: { columns: { name: true } } },
+          with: {
+            petType: { columns: { name: true } },
+          },
           orderBy: [asc(petTypes.petTypeId)],
         },
       },
-      where: (sitter) => eq(sitter.petSitterId, sitterId),
+      where: whereClause,
     });
   },
 
   getByUserId: async (userId: string) => {
-    return (
-      await db.select().from(petSitters).where(eq(petSitters.userId, userId))
-    )[0];
+    return db.query.petSitters.findFirst({
+      columns: {
+        petSitterId: true,
+        tradeName: true,
+        experience: true,
+        introduction: true,
+        services: true,
+        description: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        reviewCount: true,
+        ratingAvg: true,
+        status: true,
+      },
+      with: {
+        user: {
+          columns: {
+            name: true,
+            phone: true,
+            profileImgUrl: true,
+            idNumber: true,
+            dateOfBirth: true,
+            email: true,
+            status: true,
+          },
+        },
+        petSitterImages: {
+          columns: { imgUrl: true },
+          orderBy: [asc(petSitterImages.imageOrder)],
+        },
+        province: { columns: { name: true } },
+        district: { columns: { name: true } },
+        subDistrict: { columns: { name: true, postCode: true } },
+        petSittersPetTypes: {
+          columns: {},
+          with: {
+            petType: { columns: { name: true } },
+          },
+          orderBy: [asc(petTypes.petTypeId)],
+        },
+      },
+      where: eq(petSitters.userId, userId),
+    });
   },
 
   getByTradeName: async (tradeName: string) => {
@@ -177,19 +291,19 @@ const SitterRepository = {
 
   update: async (
     sitterId: number,
-    experience: string,
-    tradeName: string,
+    experience: string | null | undefined,
+    tradeName: string | null | undefined,
     imgUrls: string[],
-    petTypeIds: number[],
+    petTypeIds: number[] | undefined,
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
-    address: string,
-    latitude: string,
-    longitude: string,
-    provinceId: number,
-    districtId: number,
-    subDistrictId: number,
+    address: string | null | undefined,
+    latitude: string | null | undefined,
+    longitude: string | null | undefined,
+    provinceId: number | null | undefined,
+    districtId: number | null | undefined,
+    subDistrictId: number | null | undefined,
   ) => {
     await db.transaction(async (tx) => {
       await tx
@@ -209,16 +323,18 @@ const SitterRepository = {
         })
         .where(eq(petSitters.petSitterId, sitterId));
 
-      await tx
-        .delete(petSittersPetTypes)
-        .where(eq(petSittersPetTypes.petSitterId, sitterId));
+      if (petTypeIds) {
+        await tx
+          .delete(petSittersPetTypes)
+          .where(eq(petSittersPetTypes.petSitterId, sitterId));
 
-      await tx.insert(petSittersPetTypes).values(
-        petTypeIds.map((petTypeId) => ({
-          petSitterId: sitterId,
-          petTypeId,
-        })),
-      );
+        await tx.insert(petSittersPetTypes).values(
+          petTypeIds.map((petTypeId) => ({
+            petSitterId: sitterId,
+            petTypeId,
+          })),
+        );
+      }
 
       await tx
         .delete(petSitterImages)
@@ -226,8 +342,9 @@ const SitterRepository = {
 
       if (imgUrls.length) {
         await tx.insert(petSitterImages).values(
-          imgUrls.map((imgUrl) => ({
+          imgUrls.map((imgUrl, index) => ({
             petSitterId: sitterId,
+            imageOrder: index,
             imgUrl,
           })),
         );

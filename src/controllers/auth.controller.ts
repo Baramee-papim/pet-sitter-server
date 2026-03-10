@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import AuthService from "../services/auth.service";
+import SitterService from "../services/sitter.service";
 import { LoginBody, RegisterBody, ResetPasswordBody } from "../types/auth";
 
 const AuthController = {
@@ -46,11 +47,12 @@ const AuthController = {
 
   getUser: async (req: Request, res: Response) => {
     const token = req.headers.authorization?.split(" ")[1];
-    let result;
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
+
+    let result;
 
     try {
       result = await AuthService.getUser(token);
@@ -63,6 +65,19 @@ const AuthController = {
       return res.status(500).json({ error: "Internal server error" });
     }
 
+    let sitterId: number | undefined = undefined;
+    if (result.user.role === "sitter") {
+      try {
+        const sitter = await SitterService.getSitterByUserId(
+          result.data.user.id,
+        );
+        sitterId = sitter.petSitterId;
+      } catch {
+        // non-fatal — sitter profile may not exist yet
+        sitterId = undefined;
+      }
+    }
+
     const userResponse = {
       id: result.data.user.id,
       email: result.data.user.email,
@@ -70,6 +85,7 @@ const AuthController = {
       phone: result.user.phone,
       profileImgUrl: result.user.profileImgUrl,
       role: result.user.role,
+      sitterId,
     };
 
     return res.status(200).json(userResponse);
@@ -80,11 +96,12 @@ const AuthController = {
     res: Response,
   ) => {
     const token = req.headers.authorization?.split(" ")[1];
-    const { oldPassword, newPassword } = req.body;
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
+
+    const { oldPassword, newPassword } = req.body;
 
     try {
       await AuthService.resetPassword(token, oldPassword, newPassword);

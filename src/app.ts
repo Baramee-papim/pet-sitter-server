@@ -6,6 +6,7 @@ import AuthRoute from "./routes/auth.route";
 import OwnerRoute from "./routes/owner.route";
 import PetRoute from "./routes/pet.route";
 import SitterRoute from "./routes/sitter.route";
+import AddressRoute from "./routes/address.route";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -18,7 +19,7 @@ app.use(
       "http://localhost:3000", // Frontend local (Next.js)
       "https://pet-sitter-app-two.vercel.app",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   }),
 );
 
@@ -35,6 +36,7 @@ app.use("/pet", PetRoute);
 app.use("/pet-owner", OwnerRoute);
 app.use("/pet-sitter", SitterRoute);
 app.use("/admin", AdminRoute);
+app.use("/address", AddressRoute);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err) {

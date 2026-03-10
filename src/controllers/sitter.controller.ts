@@ -43,6 +43,7 @@ const SitterController = {
         petType,
         rating,
         experience,
+        "Approved",
       );
     } catch {
       return res.status(500).json({ error: "Internal server error" });
@@ -53,18 +54,22 @@ const SitterController = {
       totalPages: result.totalPages,
       currentPage: page,
       limit: limit,
-      sitters: result.petSitters.map((petSitter) => ({
-        id: petSitter.petSitterId,
-        sitter: petSitter.sitter,
-        imgUrl: petSitter.petSitterImage,
-        tradeName: petSitter.tradeName,
-        rating: petSitter.ratingAvg,
-        petTypes: petSitter.petTypes,
-        latitude: petSitter.latitude,
-        longitude: petSitter.longitude,
-        province: petSitter.province,
-        district: petSitter.district,
-      })),
+      sitters: result.petSitters.map((petSitter) => {
+        const { name, profileImgUrl } = petSitter.sitter;
+
+        return {
+          id: petSitter.petSitterId,
+          sitter: { name, profileImgUrl },
+          imgUrl: petSitter.petSitterImage,
+          tradeName: petSitter.tradeName,
+          rating: petSitter.ratingAvg,
+          petTypes: petSitter.petTypes,
+          latitude: petSitter.latitude,
+          longitude: petSitter.longitude,
+          province: petSitter.province,
+          district: petSitter.district,
+        };
+      }),
     };
 
     return res.status(200).json(sittersResponse);
@@ -76,6 +81,54 @@ const SitterController = {
 
     try {
       result = await SitterService.getSitterById(sitterId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const { name, profileImgUrl } = result.sitter;
+
+    const sitterResponse = {
+      id: result.petSitterId,
+      sitter: { name, profileImgUrl },
+      imgUrls: result.petSitterImages,
+      tradeName: result.tradeName,
+      experience: result.experience,
+      reviewCount: result.reviewCount,
+      rating: result.ratingAvg,
+      petTypes: result.petTypes,
+      introduction: result.introduction,
+      services: result.services,
+      description: result.description,
+      address: result.address,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      province: result.province,
+      district: result.district,
+      subDistrict: result.subDistrict,
+      postCode: result.postCode,
+    };
+
+    return res.status(200).json(sitterResponse);
+  },
+
+  getSitterProfile: async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
+    let result;
+
+    try {
+      const user = await AuthService.getUser(token);
+
+      result = await SitterService.getSitterByUserId(user.data.user.id);
     } catch (error) {
       // Client error from service
       if (error instanceof AppError) {
@@ -110,10 +163,17 @@ const SitterController = {
   },
 
   updateSitter: async (
-    req: Request<{}, {}, { body: string }>,
+    req: Request<SitterIdParams, {}, { body: string }>,
     res: Response,
   ) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
     const body: UpdateSitterBody = JSON.parse(req.body.body);
+
     const {
       experience,
       tradeName,
@@ -127,44 +187,30 @@ const SitterController = {
       provinceId,
       districtId,
       subDistrictId,
+      existingImages,
     } = body;
-    const files = req.files as Express.Multer.File[];
-    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized: Token missing" });
-    }
+    const files = (req.files as Express.Multer.File[]) || [];
 
     try {
       const user = await AuthService.getUser(token);
 
       await SitterService.updateSitter(
         user.data.user.id,
-        String(experience),
-        tradeName.trim(),
+        experience ? String(experience) : undefined,
+        tradeName ? tradeName.trim() : undefined,
         petTypeIds,
-        introduction
-          ? introduction.trim()
-          : introduction === "" || introduction === null
-          ? null
-          : undefined,
-        services
-          ? services.trim()
-          : services === "" || services === null
-          ? null
-          : undefined,
-        description
-          ? description.trim()
-          : description === "" || description === null
-          ? null
-          : undefined,
-        address.trim(),
-        String(latitude),
-        String(longitude),
+        introduction ? introduction.trim() : introduction,
+        services ? services.trim() : services,
+        description ? description.trim() : description,
+        address ? address.trim() : undefined,
+        latitude ? String(latitude) : undefined,
+        longitude ? String(longitude) : undefined,
         provinceId,
         districtId,
         subDistrictId,
         files,
+        existingImages ?? [],
       );
     } catch (error) {
       // Client error from service
