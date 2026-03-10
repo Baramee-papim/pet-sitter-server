@@ -111,6 +111,7 @@ const SitterMiddleware = {
       provinceId,
       districtId,
       subDistrictId,
+      existingImages,
     } = body;
 
     if (
@@ -321,6 +322,17 @@ const SitterMiddleware = {
       if (description.length < 10) {
         return res.status(400).json({
           error: "Description must be at least 10 characters long",
+        });
+      }
+    }
+
+    if (existingImages !== undefined) {
+      const orders = existingImages.map((image) => image.order);
+      const ordersSet = new Set(orders);
+
+      if (orders.length !== ordersSet.size) {
+        return res.status(400).json({
+          error: "Order numbers must be unique",
         });
       }
     }

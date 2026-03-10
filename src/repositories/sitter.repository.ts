@@ -303,8 +303,8 @@ const SitterRepository = {
         await tx.insert(petSitterImages).values(
           imgUrls.map((imgUrl, index) => ({
             petSitterId: sitterId,
-            imgUrl,
             imageOrder: index,
+            imgUrl,
           })),
         );
       }

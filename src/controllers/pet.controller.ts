@@ -185,8 +185,6 @@ const PetController = {
         file,
       );
     } catch (error) {
-      console.log(error);
-
       // Client error from service
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({ error: error.message });

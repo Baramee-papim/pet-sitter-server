@@ -36,7 +36,7 @@ export interface UpdateSitterBody {
   provinceId?: number;
   districtId?: number;
   subDistrictId?: number;
-  existingImages: {
+  existingImages?: {
     url: string;
     order: number;
   }[];
