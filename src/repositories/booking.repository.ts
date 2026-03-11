@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import db from "../db/db";
-import { bookingPets } from "../db/schema";
+import { bookingsPets } from "../db/schema";
 
 export const getBookingById = async (bookingId: number) => {
   const booking = await db.query.bookings.findFirst({
@@ -11,8 +11,8 @@ export const getBookingById = async (bookingId: number) => {
 
   const pets = await db
     .select()
-    .from(bookingPets)
-    .where(eq(bookingPets.bookingId, bookingId));
+    .from(bookingsPets)
+    .where(eq(bookingsPets.bookingId, bookingId));
 
   return { ...booking, pets };
 };
