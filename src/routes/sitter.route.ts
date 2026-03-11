@@ -37,7 +37,7 @@ SitterRoute.put(
 );
 
 SitterRoute.put(
-  "/",
+  "/profile",
   [
     UploadMiddleware.uploadImages,
     SitterMiddleware.updateSitterBody,

@@ -140,6 +140,7 @@ const SitterController = {
 
     const sitterResponse = {
       id: result.petSitterId,
+      status: result.status,
       sitter: result.sitter,
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
