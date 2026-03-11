@@ -22,7 +22,13 @@ SitterRoute.get(
 );
 
 SitterRoute.get(
-  "/booking/:bookingId",
+  "/bookings",
+  [ProtectMiddleware.sitter],
+  BookingController.getBookings,
+);
+
+SitterRoute.get(
+  "/bookings/:bookingId",
   [ProtectMiddleware.sitter],
   BookingController.getBookingById,
 );

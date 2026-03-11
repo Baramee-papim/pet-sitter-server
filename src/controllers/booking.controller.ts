@@ -1,15 +1,25 @@
 import { User } from "@supabase/supabase-js";
 import { UserRole } from "../types/user";
 import { Request, Response } from "express";
-import { getBookingByIdService } from "../services/booking.service";
+import BookingService from "../services/booking.service";
 type RequestWithUser = Request & { user?: User & { role: UserRole } };
 const BookingController = {
+  getBookings: async (req: RequestWithUser, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const result = await BookingService.getBookings(userId);
+      res.status(200).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
   getBookingById: async (req: RequestWithUser, res: Response) => {
     try {
       const bookingId = Number(req.params.bookingId);
       const userId = req.user!.id;
 
-      const result = await getBookingByIdService(bookingId, userId);
+      const result = await BookingService.getBookingById(bookingId, userId);
 
       res.status(200).json(result);
     } catch (error: any) {
