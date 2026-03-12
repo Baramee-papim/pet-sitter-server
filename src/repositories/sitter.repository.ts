@@ -34,6 +34,7 @@ const SitterRepository = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
+    hasPendingUpdate: boolean | null,
     status: SitterStatus | Extract<UserStatus, "Banned"> | null,
     canFilterByName: boolean = false,
     canFilterByEmail: boolean = false,
@@ -115,6 +116,10 @@ const SitterRepository = {
       }
     }
 
+    if (typeof hasPendingUpdate === "boolean") {
+      filters.push(eq(petSitters.hasPendingUpdate, hasPendingUpdate));
+    }
+
     if (status) {
       if (status === "Banned") {
         const sitterIdsByBannedStatus = await db
@@ -127,7 +132,20 @@ const SitterRepository = {
 
         filters.push(inArray(petSitters.petSitterId, ids));
       } else {
-        filters.push(eq(petSitters.status, status));
+        const sitterIdsByBannedStatus = await db
+          .selectDistinct({ petSitterId: petSitters.petSitterId })
+          .from(petSitters)
+          .innerJoin(users, eq(users.userId, petSitters.userId))
+          .where(eq(users.status, "Normal"));
+
+        const ids = sitterIdsByBannedStatus.map((row) => row.petSitterId);
+
+        filters.push(
+          and(
+            inArray(petSitters.petSitterId, ids),
+            eq(petSitters.status, status),
+          ),
+        );
       }
     }
 
@@ -140,6 +158,7 @@ const SitterRepository = {
         latitude: true,
         longitude: true,
         ratingAvg: true,
+        hasPendingUpdate: true,
         status: true,
       },
       with: {
@@ -206,11 +225,13 @@ const SitterRepository = {
         longitude: true,
         reviewCount: true,
         ratingAvg: true,
+        hasPendingUpdate: true,
         status: true,
       },
       with: {
         user: {
           columns: {
+            userId: true,
             name: true,
             phone: true,
             profileImgUrl: true,
@@ -259,6 +280,7 @@ const SitterRepository = {
         longitude: true,
         reviewCount: true,
         ratingAvg: true,
+        hasPendingUpdate: true,
         status: true,
       },
       with: {
@@ -411,6 +433,7 @@ const SitterRepository = {
     districtId: number | null | undefined,
     subDistrictId: number | null | undefined,
     status: SitterStatus | undefined,
+    hasPendingUpdate: boolean | undefined,
     imgUrls: string[] | undefined,
   ) => {
     await db.transaction(async (tx) => {
@@ -428,6 +451,7 @@ const SitterRepository = {
           provinceId,
           districtId,
           subDistrictId,
+          hasPendingUpdate,
           status,
         })
         .where(eq(petSitters.petSitterId, sitterId));

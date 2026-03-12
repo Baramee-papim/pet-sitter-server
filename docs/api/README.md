@@ -626,7 +626,7 @@ Get the sitter profile for the currently authenticated sitter.
 
 ---
 
-### PUT /pet-sitter/
+### PUT /pet-sitter/profile
 
 Request an update to the sitter profile (pending approval by admin).
 
@@ -971,6 +971,7 @@ Get a paginated list of sitters for admin management.
         "status": "Normal" | "Banned"
       },
       "tradeName": "string",
+      "hasPendingUpdate": "boolean",
       "status": "Pending" | "Approved" | "Rejected" | "Banned"
     }
   ]
@@ -1027,6 +1028,7 @@ Get detailed information about a sitter by sitter ID for admin.
   "district": "string",
   "subDistrict": "string",
   "postCode": "string",
+  "hasPendingUpdate": "boolean",
   "status": "Pending" | "Approved" | "Rejected" | "Banned"
 }
 ```

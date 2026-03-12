@@ -40,6 +40,12 @@ AdminRoute.get(
   AdminController.getSitterById,
 );
 
+AdminRoute.get(
+  "/pet-sitter/pending-update/:sitterId",
+  [SitterMiddleware.sitterId, ProtectMiddleware.admin],
+  AdminController.getPendingUpdateSitterById,
+);
+
 AdminRoute.patch(
   "/ban/:userId",
   [UserMiddleware.userId, ProtectMiddleware.admin],

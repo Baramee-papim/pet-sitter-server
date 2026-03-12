@@ -43,6 +43,7 @@ const SitterController = {
         petType,
         rating,
         experience,
+        null,
         "Approved",
       );
     } catch {
@@ -140,7 +141,6 @@ const SitterController = {
 
     const sitterResponse = {
       id: result.petSitterId,
-      status: result.status,
       sitter: result.sitter,
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
@@ -158,6 +158,8 @@ const SitterController = {
       district: result.district,
       subDistrict: result.subDistrict,
       postCode: result.postCode,
+      hasPendingUpdate: result.hasPendingUpdate,
+      status: result.status,
     };
 
     return res.status(200).json(sitterResponse);

@@ -19,6 +19,7 @@ const SitterService = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
+    hasPendingUpdate: boolean | null,
     status: SitterStatus | Extract<UserStatus, "Banned"> | null,
     canFilterByName: boolean = false,
     canFilterByEmail: boolean = false,
@@ -31,6 +32,7 @@ const SitterService = {
       petType,
       rating,
       experience,
+      hasPendingUpdate,
       status,
       canFilterByName,
       canFilterByEmail,
@@ -70,6 +72,7 @@ const SitterService = {
     return {
       ...result,
       sitter: {
+        id: result.user.userId,
         name: result.user.name,
         phone: result.user.phone,
         profileImgUrl: result.user.profileImgUrl,
@@ -127,6 +130,31 @@ const SitterService = {
       latitude: result.latitude ? Number(result.latitude) : null,
       longitude: result.longitude ? Number(result.longitude) : null,
       ratingAvg: result.ratingAvg ? Number(result.ratingAvg) : null,
+    };
+  },
+
+  getPendingUpdateSitterById: async (sitterId: number) => {
+    const result = await SitterRepository.getPendingUpdateById(sitterId);
+
+    if (!result) {
+      throw new AppError(404, "Sitter not found for this pending update");
+    }
+
+    return {
+      ...result,
+      petSitterImages: result.petSitterImagePendingUpdates.map(
+        (petSitterImage) => petSitterImage.imgUrl,
+      ),
+      petTypes: result.petSittersPetTypesPendingUpdates.map(
+        (petSitterPetType) => petSitterPetType.petType.name,
+      ),
+      province: result.province?.name ?? null,
+      district: result.district?.name ?? null,
+      subDistrict: result.subDistrict?.name ?? null,
+      postCode: result.subDistrict?.postCode ?? null,
+      experience: result.experience ? Number(result.experience) : null,
+      latitude: result.latitude ? Number(result.latitude) : null,
+      longitude: result.longitude ? Number(result.longitude) : null,
     };
   },
 
@@ -268,25 +296,24 @@ const SitterService = {
           : sitter.petSitterImages.map((image) => image.imgUrl),
       );
 
-      if (sitter.status === "Unapproved") {
-        await SitterRepository.update(
-          sitterId,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          "Waiting for approval",
-          undefined,
-        );
-      }
+      await SitterRepository.update(
+        sitterId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        sitter.status !== "Approved" ? "Waiting for approval" : undefined,
+        true,
+        undefined,
+      );
     } catch (error) {
       // Rollback newly uploaded files on any error
       if (filePaths.length) {
@@ -306,9 +333,9 @@ const SitterService = {
       throw new AppError(404, "Sitter not found for this pending update");
     }
 
-    const lookupSitter = await SitterRepository.getById(sitterId, false);
+    const sitter = await SitterRepository.getById(sitterId, false);
 
-    if (!lookupSitter) {
+    if (!sitter) {
       throw new AppError(404, "Sitter not found");
     }
 
@@ -317,7 +344,7 @@ const SitterService = {
         (image) => image.imgUrl,
       );
 
-    const removedImages = lookupSitter.petSitterImages
+    const removedImages = sitter.petSitterImages
       .filter((image) => !sitterPendingImages.includes(image.imgUrl))
       .map((image) => image.imgUrl.split(`/${bucket}/`)[1]);
 
@@ -342,6 +369,7 @@ const SitterService = {
       lookupPendingSitter.district?.districtId,
       lookupPendingSitter.subDistrict?.subDistrictId,
       "Approved",
+      false,
       sitterPendingImages,
     );
 
@@ -357,15 +385,13 @@ const SitterService = {
       throw new AppError(404, "Sitter not found for this pending update");
     }
 
-    const lookupSitter = await SitterRepository.getById(sitterId, false);
+    const sitter = await SitterRepository.getById(sitterId, false);
 
-    if (!lookupSitter) {
+    if (!sitter) {
       throw new AppError(404, "Sitter not found");
     }
 
-    const sitterImages = lookupSitter.petSitterImages.map(
-      (image) => image.imgUrl,
-    );
+    const sitterImages = sitter.petSitterImages.map((image) => image.imgUrl);
 
     const removedImages = lookupPendingSitter.petSitterImagePendingUpdates
       .filter((pendingImage) => !sitterImages.includes(pendingImage.imgUrl))
@@ -375,125 +401,27 @@ const SitterService = {
       await supabaseAdmin.storage.from(bucket).remove(removedImages);
     }
 
-    if (lookupSitter.status !== "Approved") {
-      await SitterRepository.update(
-        sitterId,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        "Rejected",
-        undefined,
-      );
-    }
+    await SitterRepository.update(
+      sitterId,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      sitter.status !== "Approved" ? "Rejected" : undefined,
+      false,
+      undefined,
+    );
 
     await SitterRepository.deletePendingUpdate(sitterId);
   },
 };
 
 export default SitterService;
-
-// const filePaths: string[] = [];
-// const publicUrls: string[] = [];
-
-// try {
-//   const now = new UTCDate();
-
-//   // Upload new images with upsert: true to overwrite if same path
-//   for (let i = 0; i < files.length; i++) {
-//     const file = files[i];
-//     const ext = file.mimetype.split("/")[1];
-
-//     const filePath = `${userId}/sitter-${format(
-//       now,
-//       "yyyyMMddHHmmss",
-//     )}-${i}.${ext}`;
-
-//     const { error } = await supabaseAdmin.storage
-//       .from(bucket)
-//       .upload(filePath, file.buffer, {
-//         contentType: file.mimetype,
-//         upsert: true,
-//       });
-
-//     if (error) throw error;
-
-//     filePaths.push(filePath);
-
-//     const { data } = supabaseAdmin.storage
-//       .from(bucket)
-//       .getPublicUrl(filePath);
-//     publicUrls.push(data.publicUrl);
-//   }
-
-//   // sort kept images by order, extract URLs
-//   const safeExistingImages = Array.isArray(existingImages)
-//     ? existingImages
-//     : [];
-//   const keptImages = safeExistingImages
-//     .sort((a, b) => a.order - b.order)
-//     .map((img) => img.url);
-
-//   // kept existing first, new uploads appended at end
-//   const finalImages = [...keptImages, ...publicUrls];
-
-//   //  fallback: if nothing sent, keep all old images
-//   const imagesToSave =
-//     finalImages.length > 0
-//       ? finalImages
-//       : sitter?.petSitterImages.map((img) => img.imgUrl) ?? [];
-
-//   await SitterRepository.update(
-//     sitterId,
-//     experience,
-//     tradeName,
-//     imagesToSave,
-//     petTypeIds,
-//     introduction,
-//     services,
-//     description,
-//     address,
-//     latitude,
-//     longitude,
-//     provinceId,
-//     districtId,
-//     subDistrictId,
-//     sitter.status === "Approved" ? "Approved" : "Waiting for approval",
-//   );
-
-//   // delete only storage files that were removed by user
-//   if (sitter?.petSitterImages.length) {
-//     const keptUrls = new Set(keptImages);
-//     const urlsToDelete = sitter.petSitterImages
-//       .map((img) => img.imgUrl)
-//       .filter((url) => !keptUrls.has(url));
-
-//     if (urlsToDelete.length) {
-//       const storagePaths = urlsToDelete
-//         .map((url) => {
-//           // correctly extract storage path from full public URL
-//           const match = url.match(/\/object\/public\/sitter-assets\/(.+)/);
-//           return match ? match[1] : null;
-//         })
-//         .filter((path): path is string => path !== null);
-
-//       if (storagePaths.length) {
-//         await supabaseAdmin.storage.from(bucket).remove(storagePaths);
-//       }
-//     }
-//   }
-// } catch (error) {
-//   // rollback newly uploaded files on any error
-//   if (filePaths.length) {
-//     await supabaseAdmin.storage.from(bucket).remove(filePaths);
-//   }
-//   throw error;
-// }

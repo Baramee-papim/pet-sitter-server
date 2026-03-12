@@ -13,6 +13,9 @@ import {
   pgPolicy,
   unique,
   date,
+  boolean,
+  vector,
+  jsonb,
   primaryKey,
   pgEnum,
 } from "drizzle-orm/pg-core";
@@ -239,6 +242,7 @@ export const petSitters = pgTable(
     ratingBucket: integer("rating_bucket"),
     bankId: integer("bank_id"),
     accountNumber: varchar("account_number", { length: 30 }),
+    hasPendingUpdate: boolean("has_pending_update").default(false).notNull(),
     status: petSitterStatus().default("Unapproved").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
@@ -328,6 +332,18 @@ export const reviews = pgTable(
     check("reviews_rating_check", sql`(rating >= 1) AND (rating <= 5)`),
   ],
 );
+
+export const ragDocuments = pgTable("rag_documents", {
+  ragDocumentId: uuid("rag_document_id").defaultRandom().primaryKey().notNull(),
+  sourceTable: text("source_table"),
+  sourceId: text("source_id"),
+  content: text().notNull(),
+  embedding: vector({ dimensions: 1536 }).notNull(),
+  metadata: jsonb(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    .defaultNow()
+    .notNull(),
+});
 
 export const petSitterPendingUpdates = pgTable(
   "pet_sitter_pending_updates",
@@ -595,7 +611,7 @@ export const petSitterImagePendingUpdates = pgTable(
       columns: [table.petSitterId],
       foreignColumns: [petSitterPendingUpdates.petSitterId],
       name: "pet_sitter_image_pending_updates_pet_sitter_id_fkey",
-    }),
+    }).onDelete("cascade"),
     primaryKey({
       columns: [table.petSitterId, table.imageOrder],
       name: "pet_sitter_image_pending_updates_pkey",
