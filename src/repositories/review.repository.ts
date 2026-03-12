@@ -64,22 +64,11 @@ const ReviewRepository = {
 
     return { result, totalReviews };
   },
-
-};
-
-export default ReviewRepository;
-import { reviews } from "../db/schema";
-import db from "../db/db";
-// import { and, eq } from "drizzle-orm";
-// import { bookings, reviews } from "../db/schema";
-// import db from "../db/db";
-
-class ReviewRepository {
-  static async createReview(payload: {
+  createReview: async (payload: {
     bookingId: number;
     rating: number;
     comment: string;
-  }) {
+  }) => {
     const [review] = await db
       .insert(reviews)
       .values({
@@ -90,17 +79,17 @@ class ReviewRepository {
       .returning();
 
     return review;
-  }
+  },
 
-  static async findReviewByBookingId(bookingId: number) {
+  findReviewByBookingId: async (bookingId: number) => {
     const review = await db.query.reviews.findFirst({
       where: (reviews, { eq }) => eq(reviews.bookingId, bookingId),
     });
 
     return review;
-  }
+  },
 
-  static async findAccessibleBookingById(bookingId: number, userId: string) {
+  findAccessibleBookingById: async (bookingId: number, userId: string) => {
     const booking = await db.query.bookings.findFirst({
       where: (bookings, { and, eq }) =>
         and(
@@ -110,52 +99,8 @@ class ReviewRepository {
     });
 
     return booking;
-  }
-}
+  },
+
+};
 
 export default ReviewRepository;
-
-// import { and, eq } from "drizzle-orm";
-// import { bookings, reviews } from "../db/schema";
-// import db from "../db/db";
-
-// class ReviewRepository {
-//   static async createReview(payload: {
-//     bookingId: number;
-//     rating: number;
-//     comment: string;
-//   }) {
-//     const [review] = await db
-//       .insert(reviews)
-//       .values({
-//         bookingId: payload.bookingId,
-//         rating: payload.rating,
-//         comment: payload.comment,
-//       })
-//       .returning();
-
-//     return review;
-//   }
-
-//   static async findReviewByBookingId(bookingId: number) {
-//     const review = await db.query.reviews.findFirst({
-//       where: (reviews, { eq }) => eq(reviews.bookingId, bookingId),
-//     });
-
-//     return review;
-//   }
-
-//   static async findAccessibleBookingById(bookingId: number, userId: string) {
-//     const booking = await db.query.bookings.findFirst({
-//       where: (bookings, { and, eq }) =>
-//         and(
-//           eq(bookings.bookingId, bookingId),
-//           eq(bookings.petOwnerId, userId),
-//         ),
-//     });
-
-//     return booking;
-//   }
-// }
-
-// export default ReviewRepository;

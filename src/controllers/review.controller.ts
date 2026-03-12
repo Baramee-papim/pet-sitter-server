@@ -3,6 +3,8 @@ import AppError from "../errors/AppError";
 import ReviewService from "../services/review.service";
 import { GetReviewsQuery, ReviewItem } from "../types/review";
 import { SitterIdParams } from "../types/sitter";
+import AuthService from "../services/auth.service";
+
 
 const ReviewController = {
   getReviewsBySitterId: async (
@@ -45,46 +47,44 @@ const ReviewController = {
     };
 
     return res.status(200).json(reviewsResponse);
+    
   },
+  createReview: async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader) {
+        throw new AppError(401, "Authorization header missing");
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      if (!token) {
+        throw new AppError(401, "Invalid authorization header");
+      }
+
+      const authResult = await AuthService.getUser(token);
+
+      const review = await ReviewService.createReview({
+        userId: authResult.user.userId,
+        bookingId: req.body.booking_id,
+        rating: req.body.rating,
+        comment: req.body.comment,
+      });
+
+      res.status(201).json({
+        message: "Review created successfully",
+        data: review,
+      });
+
+    } catch (error: any) {
+      console.error("createReview error:", error);
+
+      res.status(error.status || 500).json({
+        error: error.message || "Internal Server Error",
+      });
+    }
+  }
 };
 
 export default ReviewController;
-import { Request, Response } from "express";
-import ReviewService from "../services/review.service";
-import AuthService from "../services/auth.service";
-import AppError from "../errors/AppError";
-
-export const createReview = async (req: Request, res: Response) => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      throw new AppError(401, "Authorization header missing");
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    if (!token) {
-      throw new AppError(401, "Invalid authorization header");
-    }
-
-    const authResult = await AuthService.getUser(token);
-
-    const review = await ReviewService.createReview({
-      userId: authResult.user.userId,
-      bookingId: req.body.booking_id,
-      rating: req.body.rating,
-      comment: req.body.comment,
-    });
-
-    res.status(201).json({
-      message: "Review created successfully",
-      data: review,
-    });
-  } catch (error: any) {
-    console.error("createReview error:", error);
-    res.status(error.status || 500).json({
-      error: error.message || "Internal Server Error",
-    });
-  }
-};

@@ -37,13 +37,7 @@ const ReviewService = {
       })),
     };
   },
-};
-
-export default ReviewService;import AppError from "../errors/AppError";
-import ReviewRepository from "../repositories/review.repository";
-
-class ReviewService {
-  static async createReview({
+  createReview: async ({
     userId,
     bookingId,
     rating,
@@ -53,7 +47,7 @@ class ReviewService {
     bookingId: number;
     rating: number;
     comment: string;
-  }) {
+  }) => {
     const normalizedBookingId = Number(bookingId);
     const normalizedRating = Number(rating);
     const trimmedComment = String(comment ?? "").trim();
@@ -72,7 +66,7 @@ class ReviewService {
 
     const booking = await ReviewRepository.findAccessibleBookingById(
       normalizedBookingId,
-      userId,
+      userId
     );
 
     if (!booking) {
@@ -84,7 +78,7 @@ class ReviewService {
     }
 
     const existingReview = await ReviewRepository.findReviewByBookingId(
-      normalizedBookingId,
+      normalizedBookingId
     );
 
     if (existingReview) {
@@ -98,7 +92,9 @@ class ReviewService {
     });
 
     return review;
-  }
-}
+  },
+};
 
 export default ReviewService;
+
+

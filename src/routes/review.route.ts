@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createReview } from "../controllers/review.controller";
+import ReviewController from "../controllers/review.controller";
 
 
 
@@ -7,6 +7,6 @@ import { createReview } from "../controllers/review.controller";
 const Reviewroute = Router();
 console.log("review.route loaded");
 
-Reviewroute.post("/", createReview);
+Reviewroute.post("/", ReviewController.createReview)
 
 export default Reviewroute;
