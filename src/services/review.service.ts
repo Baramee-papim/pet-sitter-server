@@ -39,4 +39,66 @@ const ReviewService = {
   },
 };
 
+export default ReviewService;import AppError from "../errors/AppError";
+import ReviewRepository from "../repositories/review.repository";
+
+class ReviewService {
+  static async createReview({
+    userId,
+    bookingId,
+    rating,
+    comment,
+  }: {
+    userId: string;
+    bookingId: number;
+    rating: number;
+    comment: string;
+  }) {
+    const normalizedBookingId = Number(bookingId);
+    const normalizedRating = Number(rating);
+    const trimmedComment = String(comment ?? "").trim();
+
+    if (!normalizedBookingId || !normalizedRating || !trimmedComment) {
+      throw new AppError(400, "booking_id, rating and comment are required");
+    }
+
+    if (
+      !Number.isInteger(normalizedRating) ||
+      normalizedRating < 1 ||
+      normalizedRating > 5
+    ) {
+      throw new AppError(400, "Rating must be between 1 and 5");
+    }
+
+    const booking = await ReviewRepository.findAccessibleBookingById(
+      normalizedBookingId,
+      userId,
+    );
+
+    if (!booking) {
+      throw new AppError(404, "Booking not found or not accessible");
+    }
+
+    if (booking.status !== "Success") {
+      throw new AppError(400, "You can only review completed bookings");
+    }
+
+    const existingReview = await ReviewRepository.findReviewByBookingId(
+      normalizedBookingId,
+    );
+
+    if (existingReview) {
+      throw new AppError(409, "This booking has already been reviewed");
+    }
+
+    const review = await ReviewRepository.createReview({
+      bookingId: normalizedBookingId,
+      rating: normalizedRating,
+      comment: trimmedComment,
+    });
+
+    return review;
+  }
+}
+
 export default ReviewService;

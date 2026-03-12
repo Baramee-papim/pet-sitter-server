@@ -61,6 +61,8 @@ const AuthService = {
 
     if (authError) {
       throw new AppError(401, "Unauthorized or token expired");
+      // console.error("supabase authError:", authError);
+      // throw new AppError(401, authError.message);
     }
 
     let result = await UserRepository.getById(data.user.id);
