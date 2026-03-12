@@ -65,65 +65,6 @@ const ReviewRepository = {
     return { result, totalReviews };
   },
 
-//   getByBookingId: async (bookingId: number) => {
-//     return db.query.reviews.findFirst({
-//       columns: {
-//         reviewId: true,
-//         bookingId: true,
-//         rating: true,
-//         comment: true,
-//         createdAt: true,
-//       },
-//       with: {
-//         booking: {
-//           columns: { bookingId: true, petOwnerId: true, petSitterId: true },
-//           with: {
-//             user: {
-//               columns: {
-//                 userId: true,
-//                 name: true,
-//                 profileImgUrl: true,
-//               },
-//             },
-//           },
-//         },
-//       },
-//       where: eq(reviews.bookingId, bookingId),
-//     });
-//   },
-
-//   getById: async (reviewId: number) => {
-//     return db.query.reviews.findFirst({
-//       columns: {
-//         reviewId: true,
-//         bookingId: true,
-//         rating: true,
-//         comment: true,
-//         createdAt: true,
-//       },
-//       with: {
-//         booking: {
-//           columns: {
-//             bookingId: true,
-//             petOwnerId: true,
-//             petSitterId: true,
-//             status: true,
-//           },
-//           with: {
-//             user: {
-//               columns: {
-//                 userId: true,
-//                 name: true,
-//                 profileImgUrl: true,
-//                 email: true,
-//               },
-//             },
-//           },
-//         },
-//       },
-//       where: eq(reviews.reviewId, reviewId),
-//     });
-//   },
 };
 
 export default ReviewRepository;
