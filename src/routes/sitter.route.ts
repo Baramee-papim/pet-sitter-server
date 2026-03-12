@@ -5,6 +5,8 @@ import ProtectMiddleware from "../middlewares/protect.middleware";
 import SitterMiddleware from "../middlewares/sitter.middleware";
 import UploadMiddleware from "../middlewares/upload.middleware";
 import UserMiddleware from "../middlewares/user.middleware";
+import ReviewMiddleware from "../middlewares/review.middleware";
+import ReviewController from "../controllers/review.controller";
 import BookingController from "../controllers/booking.controller";
 
 const SitterRoute = Router();
@@ -37,6 +39,15 @@ SitterRoute.get(
   "/:sitterId",
   [SitterMiddleware.sitterId],
   SitterController.getSitterById,
+);
+
+SitterRoute.get(
+  "/:sitterId/reviews",
+  [
+    SitterMiddleware.sitterId,
+    ReviewMiddleware.getReviewsQuery
+  ],
+  ReviewController.getReviewsBySitterId,
 );
 
 SitterRoute.put(
