@@ -98,6 +98,10 @@ const SitterMiddleware = {
       return res.status(400).json({ error: "Invalid JSON body" });
     }
 
+    if (!Object.keys(body).length) {
+      return res.status(400).json({ error: "No fields to update" });
+    }
+
     const {
       experience,
       tradeName,
@@ -134,7 +138,7 @@ const SitterMiddleware = {
     }
 
     // Type validations
-    if (experience !== undefined) {
+    if (experience !== undefined && experience !== null) {
       if (typeof experience !== "number") {
         return res.status(400).json({ error: "Experience must be a number" });
       }
@@ -158,28 +162,34 @@ const SitterMiddleware = {
       }
     }
 
-    if (tradeName !== undefined) {
+    if (tradeName !== undefined && tradeName !== null) {
       if (typeof tradeName !== "string") {
         return res.status(400).json({ error: "Trade name must be a string" });
       }
 
-      if (tradeName.length < 5) {
+      if (tradeName.trim().length < 5) {
         return res.status(400).json({
           error: "Trade name must be at least 5 characters long",
         });
       }
 
-      if (tradeName.length > 50) {
+      if (tradeName.trim().length > 50) {
         return res.status(400).json({
           error: "Trade name must be less than 50 characters",
         });
       }
     }
 
-    if (petTypeIds !== undefined) {
+    if (petTypeIds !== undefined && petTypeIds !== null) {
       if (!Array.isArray(petTypeIds)) {
         return res.status(400).json({
           error: "Pet type IDs must be an array",
+        });
+      }
+
+      if (!petTypeIds.length) {
+        return res.status(400).json({
+          error: "Pet type IDs must be an array with at least one element",
         });
       }
 
@@ -192,25 +202,61 @@ const SitterMiddleware = {
       });
     }
 
-    if (address !== undefined) {
+    if (introduction !== undefined && introduction !== null) {
+      if (typeof introduction !== "string") {
+        return res.status(400).json({ error: "Introduction must be a string" });
+      }
+
+      if (introduction.trim().length < 10) {
+        return res.status(400).json({
+          error: "Introduction must be at least 10 characters long",
+        });
+      }
+    }
+
+    if (services !== undefined && services !== null) {
+      if (typeof services !== "string") {
+        return res.status(400).json({ error: "Services must be a string" });
+      }
+
+      if (services.trim().length < 10) {
+        return res.status(400).json({
+          error: "Services must be at least 10 characters long",
+        });
+      }
+    }
+
+    if (description !== undefined && description !== null) {
+      if (typeof description !== "string") {
+        return res.status(400).json({ error: "Description must be a string" });
+      }
+
+      if (description.trim().length < 10) {
+        return res.status(400).json({
+          error: "Description must be at least 10 characters long",
+        });
+      }
+    }
+
+    if (address !== undefined && address !== null) {
       if (typeof address !== "string") {
         return res.status(400).json({ error: "Address name must be a string" });
       }
 
-      if (address.length < 10) {
+      if (address.trim().length < 10) {
         return res.status(400).json({
           error: "Address name must be at least 10 characters long",
         });
       }
 
-      if (address.length > 100) {
+      if (address.trim().length > 100) {
         return res.status(400).json({
           error: "Address name must be less than 100 characters",
         });
       }
     }
 
-    if (latitude !== undefined) {
+    if (latitude !== undefined && latitude !== null) {
       if (typeof latitude !== "number") {
         return res.status(400).json({ error: "Latitude must be a number" });
       }
@@ -222,7 +268,7 @@ const SitterMiddleware = {
       }
     }
 
-    if (longitude !== undefined) {
+    if (longitude !== undefined && longitude !== null) {
       if (typeof longitude !== "number") {
         return res.status(400).json({ error: "Longitude must be a number" });
       }
@@ -234,7 +280,7 @@ const SitterMiddleware = {
       }
     }
 
-    if (provinceId !== undefined) {
+    if (provinceId !== undefined && provinceId !== null) {
       if (typeof provinceId !== "number") {
         return res.status(400).json({ error: "Province ID must be a number" });
       }
@@ -252,7 +298,7 @@ const SitterMiddleware = {
       }
     }
 
-    if (districtId !== undefined) {
+    if (districtId !== undefined && districtId !== null) {
       if (typeof districtId !== "number") {
         return res.status(400).json({ error: "District ID must be a number" });
       }
@@ -270,7 +316,7 @@ const SitterMiddleware = {
       }
     }
 
-    if (subDistrictId !== undefined) {
+    if (subDistrictId !== undefined && subDistrictId !== null) {
       if (typeof subDistrictId !== "number") {
         return res.status(400).json({
           error: "Subdistrict ID must be a number",
@@ -290,43 +336,42 @@ const SitterMiddleware = {
       }
     }
 
-    if (introduction !== undefined && introduction !== null) {
-      if (typeof introduction !== "string") {
-        return res.status(400).json({ error: "Introduction must be a string" });
-      }
-
-      if (introduction.length < 10) {
-        return res.status(400).json({
-          error: "Introduction must be at least 10 characters long",
-        });
-      }
-    }
-
-    if (services !== undefined && services !== null) {
-      if (typeof services !== "string") {
-        return res.status(400).json({ error: "Services must be a string" });
-      }
-
-      if (services.length < 10) {
-        return res.status(400).json({
-          error: "Services must be at least 10 characters long",
-        });
-      }
-    }
-
-    if (description !== undefined && description !== null) {
-      if (typeof description !== "string") {
-        return res.status(400).json({ error: "Description must be a string" });
-      }
-
-      if (description.length < 10) {
-        return res.status(400).json({
-          error: "Description must be at least 10 characters long",
-        });
-      }
-    }
-
     if (existingImages !== undefined) {
+      if (!Array.isArray(existingImages)) {
+        return res.status(400).json({
+          error: "Existing images must be an array of objects",
+        });
+      }
+
+      existingImages.forEach((image) => {
+        if (typeof image.url !== "string") {
+          return res.status(400).json({
+            error: "URL must be a string",
+          });
+        }
+
+        if (!Number.isInteger(image.order)) {
+          return res.status(400).json({
+            error: "Order must be an integer",
+          });
+        }
+
+        if (image.order < 0) {
+          return res.status(400).json({
+            error: "Order must be greater than 0",
+          });
+        }
+      });
+
+      const urls = existingImages.map((image) => image.url);
+      const urlsSet = new Set(urls);
+
+      if (urls.length !== urlsSet.size) {
+        return res.status(400).json({
+          error: "URLs must be unique",
+        });
+      }
+
       const orders = existingImages.map((image) => image.order);
       const ordersSet = new Set(orders);
 

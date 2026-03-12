@@ -52,4 +52,16 @@ AdminRoute.patch(
   AdminController.unbanUser,
 );
 
+AdminRoute.patch(
+  "/pet-sitter/approve/:sitterId",
+  [SitterMiddleware.sitterId, ProtectMiddleware.admin],
+  AdminController.approveUpdateSitter,
+);
+
+AdminRoute.patch(
+  "/pet-sitter/reject/:sitterId",
+  [SitterMiddleware.sitterId, ProtectMiddleware.admin],
+  AdminController.rejectUpdateSitter,
+);
+
 export default AdminRoute;

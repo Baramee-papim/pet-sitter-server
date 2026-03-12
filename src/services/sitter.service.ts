@@ -6,6 +6,7 @@ import SitterRepository from "../repositories/sitter.repository";
 import supabaseAdmin from "../supabase/admin";
 import { SitterStatus } from "../types/sitter";
 import { UserStatus } from "../types/user";
+import mergeItemsByOrder from "../utils/mergeItemsByOrder";
 
 const bucket = "sitter-assets";
 
@@ -129,11 +130,11 @@ const SitterService = {
     };
   },
 
-  updateSitter: async (
+  pendingUpdateSitter: async (
     userId: string,
     experience: string | null | undefined,
     tradeName: string | null | undefined,
-    petTypeIds: number[] | undefined,
+    petTypeIds: number[] | null | undefined,
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
@@ -143,9 +144,27 @@ const SitterService = {
     provinceId: number | null | undefined,
     districtId: number | null | undefined,
     subDistrictId: number | null | undefined,
-    files: Express.Multer.File[],
-    existingImages: { url: string; order: number }[],
+    files: Express.Multer.File[] | undefined,
+    existingImages: { url: string; order: number }[] | undefined,
   ) => {
+    if ((files?.length ?? 0) + (existingImages?.length ?? 0) > 10) {
+      throw new AppError(400, "Maximum number of images is 10");
+    }
+
+    const sitter = await SitterRepository.getByUserId(userId);
+
+    if (!sitter) {
+      throw new AppError(404, "Sitter not found for this user");
+    }
+
+    const sitterId = sitter.petSitterId;
+
+    const lookupPending = await SitterRepository.getPendingUpdateById(sitterId);
+
+    if (lookupPending) {
+      throw new AppError(400, "Sitter is already pending update");
+    }
+
     if (petTypeIds) {
       const lookupPetTypeIds = (await PetRepository.getTypes()).map(
         (petType) => petType.petTypeId,
@@ -158,23 +177,19 @@ const SitterService = {
       });
     }
 
-    const sitterRecord = await SitterRepository.getByUserId(userId);
-
-    if (!sitterRecord) {
-      throw new AppError(404, "Sitter not found for this user");
-    }
-
-    const sitterId = sitterRecord.petSitterId;
-
     const lookupSitter = {
       tradeName: tradeName
         ? await SitterRepository.getByTradeName(tradeName)
         : null,
+      pendingTradeName: tradeName
+        ? await SitterRepository.getByPendingTradeName(tradeName)
+        : null,
     };
 
     if (
-      lookupSitter.tradeName &&
-      lookupSitter.tradeName.petSitterId !== sitterId
+      (lookupSitter.tradeName &&
+        lookupSitter.tradeName.petSitterId !== sitterId) ||
+      lookupSitter.pendingTradeName
     ) {
       throw new AppError(400, "Sitter with this trade name already exists");
     }
@@ -183,100 +198,302 @@ const SitterService = {
     const publicUrls: string[] = [];
 
     try {
-      const now = new UTCDate();
+      let finalUrls: string[] | undefined = undefined;
 
-      // Upload new images with upsert: true to overwrite if same path
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const ext = file.mimetype.split("/")[1];
+      if (files || existingImages) {
+        if (files) {
+          const now = new UTCDate();
 
-        const filePath = `${userId}/sitter-${format(
-          now,
-          "yyyyMMddHHmmss",
-        )}-${i}.${ext}`;
+          // Upload new images with upsert: true to overwrite if same path
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const ext = file.mimetype.split("/")[1];
 
-        const { error } = await supabaseAdmin.storage
-          .from(bucket)
-          .upload(filePath, file.buffer, {
-            contentType: file.mimetype,
-            upsert: true,
-          });
+            const filePath = `${userId}/sitter-${format(
+              now,
+              "yyyyMMddHHmmss",
+            )}-${i}.${ext}`;
 
-        if (error) throw error;
+            const { error } = await supabaseAdmin.storage
+              .from(bucket)
+              .upload(filePath, file.buffer, {
+                contentType: file.mimetype,
+                upsert: true,
+              });
 
-        filePaths.push(filePath);
+            if (error) throw error;
 
-        const { data } = supabaseAdmin.storage
-          .from(bucket)
-          .getPublicUrl(filePath);
-        publicUrls.push(data.publicUrl);
-      }
+            filePaths.push(filePath);
 
-      const sitter = await SitterRepository.getById(sitterId);
-
-      // sort kept images by order, extract URLs
-      const safeExistingImages = Array.isArray(existingImages)
-        ? existingImages
-        : [];
-      const keptImages = safeExistingImages
-        .sort((a, b) => a.order - b.order)
-        .map((img) => img.url);
-
-      // kept existing first, new uploads appended at end
-      const finalImages = [...keptImages, ...publicUrls];
-
-      //  fallback: if nothing sent, keep all old images
-      const imagesToSave =
-        finalImages.length > 0
-          ? finalImages
-          : sitter?.petSitterImages.map((img) => img.imgUrl) ?? [];
-
-      await SitterRepository.update(
-        sitterId,
-        experience,
-        tradeName,
-        imagesToSave,
-        petTypeIds,
-        introduction,
-        services,
-        description,
-        address,
-        latitude,
-        longitude,
-        provinceId,
-        districtId,
-        subDistrictId,
-      );
-
-      // delete only storage files that were removed by user
-      if (sitter?.petSitterImages.length) {
-        const keptUrls = new Set(keptImages);
-        const urlsToDelete = sitter.petSitterImages
-          .map((img) => img.imgUrl)
-          .filter((url) => !keptUrls.has(url));
-
-        if (urlsToDelete.length) {
-          const storagePaths = urlsToDelete
-            .map((url) => {
-              // correctly extract storage path from full public URL
-              const match = url.match(/\/object\/public\/sitter-assets\/(.+)/);
-              return match ? match[1] : null;
-            })
-            .filter((path): path is string => path !== null);
-
-          if (storagePaths.length) {
-            await supabaseAdmin.storage.from(bucket).remove(storagePaths);
+            const { data } = supabaseAdmin.storage
+              .from(bucket)
+              .getPublicUrl(filePath);
+            publicUrls.push(data.publicUrl);
           }
         }
+
+        // Merge kept images and new uploads by order
+        finalUrls = mergeItemsByOrder(
+          existingImages ?? [],
+          publicUrls.map((url) => ({ url: url })),
+        ).map((url) => url.url);
+      }
+
+      await SitterRepository.pendingUpdate(
+        sitterId,
+        experience !== undefined ? experience : sitter.experience,
+        tradeName !== undefined ? tradeName : sitter.tradeName,
+        petTypeIds !== undefined
+          ? petTypeIds
+          : sitter.petSittersPetTypes.map(
+              (petSitterPetType) => petSitterPetType.petType.petTypeId,
+            ),
+        introduction !== undefined ? introduction : sitter.introduction,
+        services !== undefined ? services : sitter.services,
+        description !== undefined ? description : sitter.description,
+        address !== undefined ? address : sitter.address,
+        latitude !== undefined ? latitude : sitter.latitude,
+        longitude !== undefined ? longitude : sitter.longitude,
+        provinceId !== undefined
+          ? provinceId
+          : sitter.province?.provinceId ?? null,
+        districtId !== undefined
+          ? districtId
+          : sitter.district?.districtId ?? null,
+        subDistrictId !== undefined
+          ? subDistrictId
+          : sitter.subDistrict?.subDistrictId ?? null,
+        finalUrls !== undefined
+          ? finalUrls
+          : sitter.petSitterImages.map((image) => image.imgUrl),
+      );
+
+      if (sitter.status === "Unapproved") {
+        await SitterRepository.update(
+          sitterId,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          "Waiting for approval",
+          undefined,
+        );
       }
     } catch (error) {
-      // rollback newly uploaded files on any error
+      // Rollback newly uploaded files on any error
       if (filePaths.length) {
         await supabaseAdmin.storage.from(bucket).remove(filePaths);
       }
+
       throw error;
     }
+  },
+
+  approveUpdateSitter: async (sitterId: number) => {
+    const lookupPendingSitter = await SitterRepository.getPendingUpdateById(
+      sitterId,
+    );
+
+    if (!lookupPendingSitter) {
+      throw new AppError(404, "Sitter not found for this pending update");
+    }
+
+    const lookupSitter = await SitterRepository.getById(sitterId, false);
+
+    if (!lookupSitter) {
+      throw new AppError(404, "Sitter not found");
+    }
+
+    const sitterPendingImages =
+      lookupPendingSitter.petSitterImagePendingUpdates.map(
+        (image) => image.imgUrl,
+      );
+
+    const removedImages = lookupSitter.petSitterImages
+      .filter((image) => !sitterPendingImages.includes(image.imgUrl))
+      .map((image) => image.imgUrl.split(`/${bucket}/`)[1]);
+
+    if (removedImages.length) {
+      await supabaseAdmin.storage.from(bucket).remove(removedImages);
+    }
+
+    await SitterRepository.update(
+      sitterId,
+      lookupPendingSitter.experience,
+      lookupPendingSitter.tradeName,
+      lookupPendingSitter.petSittersPetTypesPendingUpdates.map(
+        (petSitterPetType) => petSitterPetType.petType.petTypeId,
+      ),
+      lookupPendingSitter.introduction,
+      lookupPendingSitter.services,
+      lookupPendingSitter.description,
+      lookupPendingSitter.address,
+      lookupPendingSitter.latitude,
+      lookupPendingSitter.longitude,
+      lookupPendingSitter.province?.provinceId,
+      lookupPendingSitter.district?.districtId,
+      lookupPendingSitter.subDistrict?.subDistrictId,
+      "Approved",
+      sitterPendingImages,
+    );
+
+    await SitterRepository.deletePendingUpdate(sitterId);
+  },
+
+  rejectUpdateSitter: async (sitterId: number) => {
+    const lookupPendingSitter = await SitterRepository.getPendingUpdateById(
+      sitterId,
+    );
+
+    if (!lookupPendingSitter) {
+      throw new AppError(404, "Sitter not found for this pending update");
+    }
+
+    const lookupSitter = await SitterRepository.getById(sitterId, false);
+
+    if (!lookupSitter) {
+      throw new AppError(404, "Sitter not found");
+    }
+
+    const sitterImages = lookupSitter.petSitterImages.map(
+      (image) => image.imgUrl,
+    );
+
+    const removedImages = lookupPendingSitter.petSitterImagePendingUpdates
+      .filter((pendingImage) => !sitterImages.includes(pendingImage.imgUrl))
+      .map((image) => image.imgUrl.split(`/${bucket}/`)[1]);
+
+    if (removedImages.length) {
+      await supabaseAdmin.storage.from(bucket).remove(removedImages);
+    }
+
+    if (lookupSitter.status !== "Approved") {
+      await SitterRepository.update(
+        sitterId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "Rejected",
+        undefined,
+      );
+    }
+
+    await SitterRepository.deletePendingUpdate(sitterId);
   },
 };
 
 export default SitterService;
+
+// const filePaths: string[] = [];
+// const publicUrls: string[] = [];
+
+// try {
+//   const now = new UTCDate();
+
+//   // Upload new images with upsert: true to overwrite if same path
+//   for (let i = 0; i < files.length; i++) {
+//     const file = files[i];
+//     const ext = file.mimetype.split("/")[1];
+
+//     const filePath = `${userId}/sitter-${format(
+//       now,
+//       "yyyyMMddHHmmss",
+//     )}-${i}.${ext}`;
+
+//     const { error } = await supabaseAdmin.storage
+//       .from(bucket)
+//       .upload(filePath, file.buffer, {
+//         contentType: file.mimetype,
+//         upsert: true,
+//       });
+
+//     if (error) throw error;
+
+//     filePaths.push(filePath);
+
+//     const { data } = supabaseAdmin.storage
+//       .from(bucket)
+//       .getPublicUrl(filePath);
+//     publicUrls.push(data.publicUrl);
+//   }
+
+//   // sort kept images by order, extract URLs
+//   const safeExistingImages = Array.isArray(existingImages)
+//     ? existingImages
+//     : [];
+//   const keptImages = safeExistingImages
+//     .sort((a, b) => a.order - b.order)
+//     .map((img) => img.url);
+
+//   // kept existing first, new uploads appended at end
+//   const finalImages = [...keptImages, ...publicUrls];
+
+//   //  fallback: if nothing sent, keep all old images
+//   const imagesToSave =
+//     finalImages.length > 0
+//       ? finalImages
+//       : sitter?.petSitterImages.map((img) => img.imgUrl) ?? [];
+
+//   await SitterRepository.update(
+//     sitterId,
+//     experience,
+//     tradeName,
+//     imagesToSave,
+//     petTypeIds,
+//     introduction,
+//     services,
+//     description,
+//     address,
+//     latitude,
+//     longitude,
+//     provinceId,
+//     districtId,
+//     subDistrictId,
+//     sitter.status === "Approved" ? "Approved" : "Waiting for approval",
+//   );
+
+//   // delete only storage files that were removed by user
+//   if (sitter?.petSitterImages.length) {
+//     const keptUrls = new Set(keptImages);
+//     const urlsToDelete = sitter.petSitterImages
+//       .map((img) => img.imgUrl)
+//       .filter((url) => !keptUrls.has(url));
+
+//     if (urlsToDelete.length) {
+//       const storagePaths = urlsToDelete
+//         .map((url) => {
+//           // correctly extract storage path from full public URL
+//           const match = url.match(/\/object\/public\/sitter-assets\/(.+)/);
+//           return match ? match[1] : null;
+//         })
+//         .filter((path): path is string => path !== null);
+
+//       if (storagePaths.length) {
+//         await supabaseAdmin.storage.from(bucket).remove(storagePaths);
+//       }
+//     }
+//   }
+// } catch (error) {
+//   // rollback newly uploaded files on any error
+//   if (filePaths.length) {
+//     await supabaseAdmin.storage.from(bucket).remove(filePaths);
+//   }
+//   throw error;
+// }

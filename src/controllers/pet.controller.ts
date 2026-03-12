@@ -174,14 +174,14 @@ const PetController = {
       await PetService.updatePet(
         user.data.user.id,
         petId,
-        petName ? petName.trim() : undefined,
+        typeof petName === "string" ? petName.trim() : petName,
         petTypeId,
         sex,
-        breed ? breed.trim() : undefined,
+        typeof breed === "string" ? breed.trim() : breed,
         dateOfBirth,
-        color ? color.trim() : undefined,
-        weight ? String(weight) : undefined,
-        about ? about.trim() : about,
+        typeof color === "string" ? color.trim() : color,
+        typeof weight === "number" ? String(weight) : weight,
+        typeof about === "string" ? about.trim() : about,
         file,
       );
     } catch (error) {

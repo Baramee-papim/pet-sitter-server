@@ -171,6 +171,40 @@ const AdminController = {
     return res.status(200).json(sitterResponse);
   },
 
+  approveUpdateSitter: async (req: Request<SitterIdParams>, res: Response) => {
+    const sitterId = Number(req.params.sitterId);
+
+    try {
+      await SitterService.approveUpdateSitter(sitterId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res.status(200).json({ message: "Update approved successfully" });
+  },
+
+  rejectUpdateSitter: async (req: Request<SitterIdParams>, res: Response) => {
+    const sitterId = Number(req.params.sitterId);
+
+    try {
+      await SitterService.rejectUpdateSitter(sitterId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res.status(200).json({ message: "Update rejected successfully" });
+  },
+
   banUser: async (req: Request<UserIdParams>, res: Response) => {
     const userId = req.params.userId;
 

@@ -82,13 +82,13 @@ const PetMiddleware = {
       return res.status(400).json({ error: "Invalid pet name" });
     }
 
-    if (petName.length < 2) {
+    if (petName.trim().length < 2) {
       return res.status(400).json({
         error: "Pet name must be at least 2 characters long",
       });
     }
 
-    if (petName.length > 50) {
+    if (petName.trim().length > 50) {
       return res.status(400).json({
         error: "Pet name must be less than 50 characters long",
       });
@@ -106,13 +106,13 @@ const PetMiddleware = {
       return res.status(400).json({ error: "Breed must be a string" });
     }
 
-    if (breed.length < 2) {
+    if (breed.trim().length < 2) {
       return res.status(400).json({
         error: "Breed must be at least 2 characters long",
       });
     }
 
-    if (breed.length > 100) {
+    if (breed.trim().length > 100) {
       return res.status(400).json({
         error: "Breed must be less than 100 characters long",
       });
@@ -137,13 +137,13 @@ const PetMiddleware = {
       return res.status(400).json({ error: "Color must be a string" });
     }
 
-    if (color.length < 2) {
+    if (color.trim().length < 2) {
       return res.status(400).json({
         error: "Color must be at least 2 characters long",
       });
     }
 
-    if (color.length > 100) {
+    if (color.trim().length > 100) {
       return res.status(400).json({
         error: "Color must be less than 100 characters long",
       });
@@ -172,13 +172,13 @@ const PetMiddleware = {
         return res.status(400).json({ error: "About must be a string" });
       }
 
-      if (about.length < 5) {
+      if (about.trim().length < 5) {
         return res.status(400).json({
           error: "About must be at least 5 characters long",
         });
       }
 
-      if (about.length > 500) {
+      if (about.trim().length > 500) {
         return res.status(400).json({
           error: "About must be less than 500 characters long",
         });
@@ -203,6 +203,10 @@ const PetMiddleware = {
       body = JSON.parse(req.body.body);
     } catch {
       return res.status(400).json({ error: "Invalid JSON body" });
+    }
+
+    if (!Object.keys(body).length) {
+      return res.status(400).json({ error: "No fields to update" });
     }
 
     const {
@@ -241,13 +245,13 @@ const PetMiddleware = {
         return res.status(400).json({ error: "Invalid pet name" });
       }
 
-      if (petName.length < 2) {
+      if (petName.trim().length < 2) {
         return res.status(400).json({
           error: "Pet name must be at least 2 characters long",
         });
       }
 
-      if (petName.length > 50) {
+      if (petName.trim().length > 50) {
         return res.status(400).json({
           error: "Pet name must be less than 50 characters long",
         });
@@ -267,13 +271,13 @@ const PetMiddleware = {
         return res.status(400).json({ error: "Breed must be a string" });
       }
 
-      if (breed.length < 2) {
+      if (breed.trim().length < 2) {
         return res.status(400).json({
           error: "Breed must be at least 2 characters long",
         });
       }
 
-      if (breed.length > 100) {
+      if (breed.trim().length > 100) {
         return res.status(400).json({
           error: "Breed must be less than 100 characters long",
         });
@@ -302,13 +306,13 @@ const PetMiddleware = {
         return res.status(400).json({ error: "Color must be a string" });
       }
 
-      if (color.length < 2) {
+      if (color.trim().length < 2) {
         return res.status(400).json({
           error: "Color must be at least 2 characters long",
         });
       }
 
-      if (color.length > 100) {
+      if (color.trim().length > 100) {
         return res.status(400).json({
           error: "Color must be less than 100 characters long",
         });
@@ -340,13 +344,13 @@ const PetMiddleware = {
         return res.status(400).json({ error: "About must be a string" });
       }
 
-      if (about.length < 5) {
+      if (about.trim().length < 5) {
         return res.status(400).json({
           error: "About must be at least 5 characters long",
         });
       }
 
-      if (about.length > 500) {
+      if (about.trim().length > 500) {
         return res.status(400).json({
           error: "About must be less than 500 characters long",
         });
