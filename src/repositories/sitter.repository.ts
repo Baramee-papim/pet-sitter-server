@@ -13,9 +13,12 @@ import {
 } from "drizzle-orm";
 import db from "../db/db";
 import {
+  petSitterImagePendingUpdates,
   petSitterImages,
+  petSitterPendingUpdates,
   petSitters,
   petSittersPetTypes,
+  petSittersPetTypesPendingUpdates,
   petTypes,
   users,
 } from "../db/schema";
@@ -31,6 +34,7 @@ const SitterRepository = {
     petType: string[] | null,
     rating: number | null,
     experience: number[] | null,
+    hasPendingUpdate: boolean | null,
     status: SitterStatus | Extract<UserStatus, "Banned"> | null,
     canFilterByName: boolean = false,
     canFilterByEmail: boolean = false,
@@ -112,6 +116,10 @@ const SitterRepository = {
       }
     }
 
+    if (typeof hasPendingUpdate === "boolean") {
+      filters.push(eq(petSitters.hasPendingUpdate, hasPendingUpdate));
+    }
+
     if (status) {
       if (status === "Banned") {
         const sitterIdsByBannedStatus = await db
@@ -124,7 +132,20 @@ const SitterRepository = {
 
         filters.push(inArray(petSitters.petSitterId, ids));
       } else {
-        filters.push(eq(petSitters.status, status));
+        const sitterIdsByBannedStatus = await db
+          .selectDistinct({ petSitterId: petSitters.petSitterId })
+          .from(petSitters)
+          .innerJoin(users, eq(users.userId, petSitters.userId))
+          .where(eq(users.status, "Normal"));
+
+        const ids = sitterIdsByBannedStatus.map((row) => row.petSitterId);
+
+        filters.push(
+          and(
+            inArray(petSitters.petSitterId, ids),
+            eq(petSitters.status, status),
+          ),
+        );
       }
     }
 
@@ -137,6 +158,7 @@ const SitterRepository = {
         latitude: true,
         longitude: true,
         ratingAvg: true,
+        hasPendingUpdate: true,
         status: true,
       },
       with: {
@@ -148,7 +170,10 @@ const SitterRepository = {
             status: true,
           },
         },
-        petSitterImages: { columns: { imgUrl: true } },
+        petSitterImages: {
+          columns: { imgUrl: true },
+          orderBy: [asc(petSitterImages.imageOrder)],
+        },
         province: { columns: { name: true } },
         district: { columns: { name: true } },
         petSittersPetTypes: {
@@ -187,7 +212,7 @@ const SitterRepository = {
 
     const whereClause = and(eq(petSitters.petSitterId, sitterId), ...filters);
 
-    return db.query.petSitters.findFirst({
+    const result = await db.query.petSitters.findFirst({
       columns: {
         petSitterId: true,
         tradeName: true,
@@ -200,11 +225,13 @@ const SitterRepository = {
         longitude: true,
         reviewCount: true,
         ratingAvg: true,
+        hasPendingUpdate: true,
         status: true,
       },
       with: {
         user: {
           columns: {
+            userId: true,
             name: true,
             phone: true,
             profileImgUrl: true,
@@ -231,6 +258,12 @@ const SitterRepository = {
       },
       where: whereClause,
     });
+
+    if (onlyApproved && result?.user?.status === "Banned") {
+      return null;
+    }
+
+    return result;
   },
 
   getByUserId: async (userId: string) => {
@@ -247,6 +280,7 @@ const SitterRepository = {
         longitude: true,
         reviewCount: true,
         ratingAvg: true,
+        hasPendingUpdate: true,
         status: true,
       },
       with: {
@@ -265,14 +299,14 @@ const SitterRepository = {
           columns: { imgUrl: true },
           orderBy: [asc(petSitterImages.imageOrder)],
         },
-        province: { columns: { name: true } },
-        district: { columns: { name: true } },
-        subDistrict: { columns: { name: true, postCode: true } },
+        province: { columns: { provinceId: true, name: true } },
+        district: { columns: { districtId: true, name: true } },
+        subDistrict: {
+          columns: { subDistrictId: true, name: true, postCode: true },
+        },
         petSittersPetTypes: {
           columns: {},
-          with: {
-            petType: { columns: { name: true } },
-          },
+          with: { petType: true },
           orderBy: [asc(petTypes.petTypeId)],
         },
       },
@@ -289,12 +323,106 @@ const SitterRepository = {
     )[0];
   },
 
+  getByPendingTradeName: async (tradeName: string) => {
+    return (
+      await db
+        .select()
+        .from(petSitterPendingUpdates)
+        .where(eq(petSitterPendingUpdates.tradeName, tradeName))
+    )[0];
+  },
+
+  getPendingUpdateById: async (sitterId: number) => {
+    return db.query.petSitterPendingUpdates.findFirst({
+      columns: {
+        petSitterId: true,
+        tradeName: true,
+        experience: true,
+        introduction: true,
+        services: true,
+        description: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+      },
+      with: {
+        petSitterImagePendingUpdates: {
+          columns: { imgUrl: true },
+          orderBy: [asc(petSitterImages.imageOrder)],
+        },
+        province: { columns: { provinceId: true, name: true } },
+        district: { columns: { districtId: true, name: true } },
+        subDistrict: {
+          columns: { subDistrictId: true, name: true, postCode: true },
+        },
+        petSittersPetTypesPendingUpdates: {
+          columns: {},
+          with: { petType: true },
+          orderBy: [asc(petTypes.petTypeId)],
+        },
+      },
+      where: eq(petSitters.petSitterId, sitterId),
+    });
+  },
+
+  pendingUpdate: async (
+    sitterId: number,
+    experience: string | null,
+    tradeName: string | null,
+    petTypeIds: number[] | null,
+    introduction: string | null,
+    services: string | null,
+    description: string | null,
+    address: string | null,
+    latitude: string | null,
+    longitude: string | null,
+    provinceId: number | null,
+    districtId: number | null,
+    subDistrictId: number | null,
+    imgUrls: string[],
+  ) => {
+    await db.transaction(async (tx) => {
+      await tx.insert(petSitterPendingUpdates).values({
+        petSitterId: sitterId,
+        experience,
+        tradeName,
+        introduction,
+        services,
+        description,
+        address,
+        latitude,
+        longitude,
+        provinceId,
+        districtId,
+        subDistrictId,
+      });
+
+      if (petTypeIds) {
+        await tx.insert(petSittersPetTypesPendingUpdates).values(
+          petTypeIds.map((petTypeId) => ({
+            petSitterId: sitterId,
+            petTypeId,
+          })),
+        );
+      }
+
+      if (imgUrls.length) {
+        await tx.insert(petSitterImagePendingUpdates).values(
+          imgUrls.map((imgUrl, index) => ({
+            petSitterId: sitterId,
+            imageOrder: index,
+            imgUrl,
+          })),
+        );
+      }
+    });
+  },
+
   update: async (
     sitterId: number,
     experience: string | null | undefined,
     tradeName: string | null | undefined,
-    imgUrls: string[],
-    petTypeIds: number[] | undefined,
+    petTypeIds: number[] | null | undefined,
     introduction: string | null | undefined,
     services: string | null | undefined,
     description: string | null | undefined,
@@ -304,6 +432,9 @@ const SitterRepository = {
     provinceId: number | null | undefined,
     districtId: number | null | undefined,
     subDistrictId: number | null | undefined,
+    status: SitterStatus | undefined,
+    hasPendingUpdate: boolean | undefined,
+    imgUrls: string[] | undefined,
   ) => {
     await db.transaction(async (tx) => {
       await tx
@@ -320,36 +451,48 @@ const SitterRepository = {
           provinceId,
           districtId,
           subDistrictId,
+          hasPendingUpdate,
+          status,
         })
         .where(eq(petSitters.petSitterId, sitterId));
 
-      if (petTypeIds) {
+      if (petTypeIds !== undefined) {
         await tx
           .delete(petSittersPetTypes)
           .where(eq(petSittersPetTypes.petSitterId, sitterId));
 
-        await tx.insert(petSittersPetTypes).values(
-          petTypeIds.map((petTypeId) => ({
-            petSitterId: sitterId,
-            petTypeId,
-          })),
-        );
+        if (petTypeIds !== null) {
+          await tx.insert(petSittersPetTypes).values(
+            petTypeIds.map((petTypeId) => ({
+              petSitterId: sitterId,
+              petTypeId,
+            })),
+          );
+        }
       }
 
-      await tx
-        .delete(petSitterImages)
-        .where(eq(petSitterImages.petSitterId, sitterId));
+      if (imgUrls) {
+        await tx
+          .delete(petSitterImages)
+          .where(eq(petSitterImages.petSitterId, sitterId));
 
-      if (imgUrls.length) {
-        await tx.insert(petSitterImages).values(
-          imgUrls.map((imgUrl, index) => ({
-            petSitterId: sitterId,
-            imageOrder: index,
-            imgUrl,
-          })),
-        );
+        if (imgUrls.length) {
+          await tx.insert(petSitterImages).values(
+            imgUrls.map((imgUrl, index) => ({
+              petSitterId: sitterId,
+              imageOrder: index,
+              imgUrl,
+            })),
+          );
+        }
       }
     });
+  },
+
+  deletePendingUpdate: async (sitterId: number) => {
+    await db
+      .delete(petSitterPendingUpdates)
+      .where(eq(petSitterPendingUpdates.petSitterId, sitterId));
   },
 };
 

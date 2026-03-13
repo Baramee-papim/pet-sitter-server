@@ -31,7 +31,7 @@ const UserController = {
 
       await UserService.updateUser(
         user.data.user.id,
-        name ? name.trim() : undefined,
+        typeof name === "string" ? name.trim() : name,
         phone,
         idNumber,
         dateOfBirth,

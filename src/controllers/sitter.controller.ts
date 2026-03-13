@@ -43,6 +43,7 @@ const SitterController = {
         petType,
         rating,
         experience,
+        null,
         "Approved",
       );
     } catch {
@@ -140,7 +141,6 @@ const SitterController = {
 
     const sitterResponse = {
       id: result.petSitterId,
-      status: result.status,
       sitter: result.sitter,
       imgUrls: result.petSitterImages,
       tradeName: result.tradeName,
@@ -158,13 +158,15 @@ const SitterController = {
       district: result.district,
       subDistrict: result.subDistrict,
       postCode: result.postCode,
+      hasPendingUpdate: result.hasPendingUpdate,
+      status: result.status,
     };
 
     return res.status(200).json(sitterResponse);
   },
 
   updateSitter: async (
-    req: Request<SitterIdParams, {}, { body: string }>,
+    req: Request<{}, {}, { body: string }>,
     res: Response,
   ) => {
     const token = req.headers.authorization?.split(" ")[1];
@@ -191,27 +193,29 @@ const SitterController = {
       existingImages,
     } = body;
 
-    const files = (req.files as Express.Multer.File[]) || [];
+    const files = req.files?.length
+      ? (req.files as Express.Multer.File[])
+      : undefined;
 
     try {
       const user = await AuthService.getUser(token);
 
-      await SitterService.updateSitter(
+      await SitterService.pendingUpdateSitter(
         user.data.user.id,
-        experience ? String(experience) : undefined,
-        tradeName ? tradeName.trim() : undefined,
+        typeof experience === "number" ? String(experience) : experience,
+        typeof tradeName === "string" ? tradeName.trim() : tradeName,
         petTypeIds,
-        introduction ? introduction.trim() : introduction,
-        services ? services.trim() : services,
-        description ? description.trim() : description,
-        address ? address.trim() : undefined,
-        latitude ? String(latitude) : undefined,
-        longitude ? String(longitude) : undefined,
+        typeof introduction === "string" ? introduction.trim() : introduction,
+        typeof services === "string" ? services.trim() : services,
+        typeof description === "string" ? description.trim() : description,
+        typeof address === "string" ? address.trim() : address,
+        typeof latitude === "number" ? String(latitude) : latitude,
+        typeof longitude === "number" ? String(longitude) : longitude,
         provinceId,
         districtId,
         subDistrictId,
         files,
-        existingImages ?? [],
+        existingImages,
       );
     } catch (error) {
       // Client error from service

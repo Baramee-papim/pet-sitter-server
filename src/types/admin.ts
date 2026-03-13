@@ -8,4 +8,5 @@ export interface AdminGetOwnersQuery extends GetOwnersQuery {
 
 export interface AdminGetSittersQuery extends GetSittersQuery {
   status?: SitterStatus | Extract<UserStatus, "Banned">;
+  hasPendingUpdate?: string;
 }

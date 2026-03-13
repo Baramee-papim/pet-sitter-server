@@ -86,6 +86,17 @@ const AdminController = {
     const petType = req.query.pet_type ? req.query.pet_type.split(",") : null;
     const rating = Number(req.query.rating) || null;
     const status = req.query.status || null;
+    const hasPendingUpdate =
+      req.query.hasPendingUpdate !== undefined
+        ? req.query.hasPendingUpdate.toLowerCase() === "true"
+          ? true
+          : req.query.hasPendingUpdate.toLowerCase() === "false"
+          ? false
+          : Number(req.query.hasPendingUpdate) ||
+            Number(req.query.hasPendingUpdate) === 0
+          ? Boolean(Number(req.query.hasPendingUpdate))
+          : null
+        : null;
     let experience: number[] | null;
     let result;
 
@@ -109,6 +120,7 @@ const AdminController = {
         petType,
         rating,
         experience,
+        hasPendingUpdate,
         status,
         true,
         true,
@@ -126,6 +138,7 @@ const AdminController = {
         id: petSitter.petSitterId,
         sitter: petSitter.sitter,
         tradeName: petSitter.tradeName,
+        hasPendingUpdate: petSitter.hasPendingUpdate,
         status: petSitter.status,
       })),
     };
@@ -165,10 +178,84 @@ const AdminController = {
       district: result.district,
       subDistrict: result.subDistrict,
       postCode: result.postCode,
+      hasPendingUpdate: result.hasPendingUpdate,
       status: result.status,
     };
 
     return res.status(200).json(sitterResponse);
+  },
+
+  getPendingUpdateSitterById: async (
+    req: Request<SitterIdParams>,
+    res: Response,
+  ) => {
+    const sitterId = Number(req.params.sitterId);
+    let result;
+
+    try {
+      result = await SitterService.getPendingUpdateSitterById(sitterId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const sitterResponse = {
+      id: result.petSitterId,
+      imgUrls: result.petSitterImages,
+      tradeName: result.tradeName,
+      experience: result.experience,
+      petTypes: result.petTypes,
+      introduction: result.introduction,
+      services: result.services,
+      description: result.description,
+      address: result.address,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      province: result.province,
+      district: result.district,
+      subDistrict: result.subDistrict,
+      postCode: result.postCode,
+    };
+
+    return res.status(200).json(sitterResponse);
+  },
+
+  approveUpdateSitter: async (req: Request<SitterIdParams>, res: Response) => {
+    const sitterId = Number(req.params.sitterId);
+
+    try {
+      await SitterService.approveUpdateSitter(sitterId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res.status(200).json({ message: "Update approved successfully" });
+  },
+
+  rejectUpdateSitter: async (req: Request<SitterIdParams>, res: Response) => {
+    const sitterId = Number(req.params.sitterId);
+
+    try {
+      await SitterService.rejectUpdateSitter(sitterId);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res.status(200).json({ message: "Update rejected successfully" });
   },
 
   banUser: async (req: Request<UserIdParams>, res: Response) => {

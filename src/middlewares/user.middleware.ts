@@ -74,13 +74,13 @@ const UserMiddleware = {
         return res.status(400).json({ error: "Invalid name" });
       }
 
-      if (name.length < 2) {
+      if (name.trim().length < 2) {
         return res.status(400).json({
           error: "Name must be at least 2 characters long",
         });
       }
 
-      if (name.length > 100) {
+      if (name.trim().length > 100) {
         return res.status(400).json({
           error: "Name must be less than 100 characters",
         });

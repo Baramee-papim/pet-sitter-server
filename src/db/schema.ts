@@ -13,6 +13,9 @@ import {
   pgPolicy,
   unique,
   date,
+  boolean,
+  vector,
+  jsonb,
   primaryKey,
   pgEnum,
 } from "drizzle-orm/pg-core";
@@ -27,6 +30,7 @@ export const bookingStatus = pgEnum("booking_status", [
 ]);
 export const petSex = pgEnum("pet_sex", ["Male", "Female", "Unknown"]);
 export const petSitterStatus = pgEnum("pet_sitter_status", [
+  "Unapproved",
   "Waiting for approval",
   "Approved",
   "Rejected",
@@ -238,7 +242,8 @@ export const petSitters = pgTable(
     ratingBucket: integer("rating_bucket"),
     bankId: integer("bank_id"),
     accountNumber: varchar("account_number", { length: 30 }),
-    status: petSitterStatus().default("Waiting for approval").notNull(),
+    hasPendingUpdate: boolean("has_pending_update").default(false).notNull(),
+    status: petSitterStatus().default("Unapproved").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -325,6 +330,86 @@ export const reviews = pgTable(
     }).onDelete("cascade"),
     unique("reviews_booking_id_key").on(table.bookingId),
     check("reviews_rating_check", sql`(rating >= 1) AND (rating <= 5)`),
+  ],
+);
+
+export const ragDocuments = pgTable("rag_documents", {
+  ragDocumentId: uuid("rag_document_id").defaultRandom().primaryKey().notNull(),
+  sourceTable: text("source_table"),
+  sourceId: text("source_id"),
+  content: text().notNull(),
+  embedding: vector({ dimensions: 1536 }).notNull(),
+  metadata: jsonb(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    .defaultNow()
+    .notNull(),
+});
+
+export const petSitterPendingUpdates = pgTable(
+  "pet_sitter_pending_updates",
+  {
+    petSitterId: integer("pet_sitter_id").primaryKey().notNull(),
+    experience: numeric({ precision: 3, scale: 1 }),
+    tradeName: varchar("trade_name", { length: 50 }),
+    introduction: text(),
+    services: text(),
+    description: text(),
+    address: varchar({ length: 100 }),
+    latitude: numeric({ precision: 9, scale: 6 }),
+    longitude: numeric({ precision: 9, scale: 6 }),
+    provinceId: integer("province_id"),
+    districtId: integer("district_id"),
+    subDistrictId: integer("sub_district_id"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("pet_sitter_pending_updates_district_id_idx").using(
+      "btree",
+      table.districtId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("pet_sitter_pending_updates_province_id_idx").using(
+      "btree",
+      table.provinceId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("pet_sitter_pending_updates_sub_district_id_idx").using(
+      "btree",
+      table.subDistrictId.asc().nullsLast().op("int4_ops"),
+    ),
+    foreignKey({
+      columns: [table.districtId],
+      foreignColumns: [districts.districtId],
+      name: "pet_sitter_pending_updates_district_id_fkey",
+    }).onDelete("set null"),
+    foreignKey({
+      columns: [table.petSitterId],
+      foreignColumns: [petSitters.petSitterId],
+      name: "pet_sitter_pending_updates_pet_sitter_id_fkey",
+    }),
+    foreignKey({
+      columns: [table.provinceId],
+      foreignColumns: [provinces.provinceId],
+      name: "pet_sitter_pending_updates_province_id_fkey",
+    }).onDelete("set null"),
+    foreignKey({
+      columns: [table.subDistrictId],
+      foreignColumns: [subDistricts.subDistrictId],
+      name: "pet_sitter_pending_updates_sub_district_id_fkey",
+    }).onDelete("set null"),
+    unique("pet_sitter_pending_updates_trade_name_key").on(table.tradeName),
+    check(
+      "pet_sitters_experience_check",
+      sql`(experience IS NULL) OR (experience > (0)::numeric)`,
+    ),
+    check(
+      "pet_sitters_latitude_check",
+      sql`(latitude IS NULL) OR ((latitude >= ('-90'::integer)::numeric) AND (latitude <= (90)::numeric))`,
+    ),
+    check(
+      "pet_sitters_longitude_check",
+      sql`(longitude IS NULL) OR ((longitude >= ('-180'::integer)::numeric) AND (longitude <= (180)::numeric))`,
+    ),
   ],
 );
 
@@ -482,6 +567,62 @@ export const petSittersPetTypes = pgTable(
   ],
 );
 
+export const petSittersPetTypesPendingUpdates = pgTable(
+  "pet_sitters_pet_types_pending_updates",
+  {
+    petSitterId: integer("pet_sitter_id").notNull(),
+    petTypeId: integer("pet_type_id").notNull(),
+  },
+  (table) => [
+    index("pet_sitters_pet_types_pending_updates_pet_sitter_id_idx").using(
+      "btree",
+      table.petSitterId.asc().nullsLast().op("int4_ops"),
+    ),
+    index("pet_sitters_pet_types_pending_updates_pet_type_id_idx").using(
+      "btree",
+      table.petTypeId.asc().nullsLast().op("int4_ops"),
+    ),
+    foreignKey({
+      columns: [table.petSitterId],
+      foreignColumns: [petSitterPendingUpdates.petSitterId],
+      name: "pet_sitters_pet_types_pending_updates_pet_sitter_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.petTypeId],
+      foreignColumns: [petTypes.petTypeId],
+      name: "pet_sitters_pet_types_pending_updates_pet_type_id_fkey",
+    }).onDelete("restrict"),
+    primaryKey({
+      columns: [table.petSitterId, table.petTypeId],
+      name: "pet_sitters_pet_types_pending_updates_pkey",
+    }),
+  ],
+);
+
+export const petSitterImagePendingUpdates = pgTable(
+  "pet_sitter_image_pending_updates",
+  {
+    petSitterId: integer("pet_sitter_id").notNull(),
+    imageOrder: integer("image_order").notNull(),
+    imgUrl: text("img_url").notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.petSitterId],
+      foreignColumns: [petSitterPendingUpdates.petSitterId],
+      name: "pet_sitter_image_pending_updates_pet_sitter_id_fkey",
+    }).onDelete("cascade"),
+    primaryKey({
+      columns: [table.petSitterId, table.imageOrder],
+      name: "pet_sitter_image_pending_updates_pkey",
+    }),
+    check(
+      "pet_sitter_image_pending_updates_image_order_check",
+      sql`(image_order >= 0) AND (image_order <= 9)`,
+    ),
+  ],
+);
+
 export const petSitterImages = pgTable(
   "pet_sitter_images",
   {
@@ -503,5 +644,9 @@ export const petSitterImages = pgTable(
       columns: [table.petSitterId, table.imageOrder],
       name: "pet_sitter_images_pkey",
     }),
+    check(
+      "pet_sitter_images_image_order_check",
+      sql`(image_order >= 0) AND (image_order <= 9)`,
+    ),
   ],
 );

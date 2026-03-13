@@ -40,6 +40,12 @@ AdminRoute.get(
   AdminController.getSitterById,
 );
 
+AdminRoute.get(
+  "/pet-sitter/pending-update/:sitterId",
+  [SitterMiddleware.sitterId, ProtectMiddleware.admin],
+  AdminController.getPendingUpdateSitterById,
+);
+
 AdminRoute.patch(
   "/ban/:userId",
   [UserMiddleware.userId, ProtectMiddleware.admin],
@@ -50,6 +56,18 @@ AdminRoute.patch(
   "/unban/:userId",
   [UserMiddleware.userId, ProtectMiddleware.admin],
   AdminController.unbanUser,
+);
+
+AdminRoute.patch(
+  "/pet-sitter/approve/:sitterId",
+  [SitterMiddleware.sitterId, ProtectMiddleware.admin],
+  AdminController.approveUpdateSitter,
+);
+
+AdminRoute.patch(
+  "/pet-sitter/reject/:sitterId",
+  [SitterMiddleware.sitterId, ProtectMiddleware.admin],
+  AdminController.rejectUpdateSitter,
 );
 
 export default AdminRoute;

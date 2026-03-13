@@ -8,10 +8,13 @@ import {
   subDistricts,
   banks,
   reviews,
+  petSitterPendingUpdates,
   petTypes,
   pets,
   bookingsPets,
   petSittersPetTypes,
+  petSittersPetTypesPendingUpdates,
+  petSitterImagePendingUpdates,
   petSitterImages,
 } from "./schema";
 
@@ -56,6 +59,7 @@ export const petSittersRelations = relations(petSitters, ({ one, many }) => ({
     fields: [petSitters.userId],
     references: [users.userId],
   }),
+  petSitterPendingUpdates: many(petSitterPendingUpdates),
   petSittersPetTypes: many(petSittersPetTypes),
   petSitterImages: many(petSitterImages),
 }));
@@ -67,11 +71,13 @@ export const districtsRelations = relations(districts, ({ one, many }) => ({
   }),
   subDistricts: many(subDistricts),
   petSitters: many(petSitters),
+  petSitterPendingUpdates: many(petSitterPendingUpdates),
 }));
 
 export const provincesRelations = relations(provinces, ({ many }) => ({
   districts: many(districts),
   petSitters: many(petSitters),
+  petSitterPendingUpdates: many(petSitterPendingUpdates),
 }));
 
 export const subDistrictsRelations = relations(
@@ -82,6 +88,7 @@ export const subDistrictsRelations = relations(
       references: [districts.districtId],
     }),
     petSitters: many(petSitters),
+    petSitterPendingUpdates: many(petSitterPendingUpdates),
   }),
 );
 
@@ -95,6 +102,30 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
     references: [bookings.bookingId],
   }),
 }));
+
+export const petSitterPendingUpdatesRelations = relations(
+  petSitterPendingUpdates,
+  ({ one, many }) => ({
+    district: one(districts, {
+      fields: [petSitterPendingUpdates.districtId],
+      references: [districts.districtId],
+    }),
+    petSitter: one(petSitters, {
+      fields: [petSitterPendingUpdates.petSitterId],
+      references: [petSitters.petSitterId],
+    }),
+    province: one(provinces, {
+      fields: [petSitterPendingUpdates.provinceId],
+      references: [provinces.provinceId],
+    }),
+    subDistrict: one(subDistricts, {
+      fields: [petSitterPendingUpdates.subDistrictId],
+      references: [subDistricts.subDistrictId],
+    }),
+    petSittersPetTypesPendingUpdates: many(petSittersPetTypesPendingUpdates),
+    petSitterImagePendingUpdates: many(petSitterImagePendingUpdates),
+  }),
+);
 
 export const petsRelations = relations(pets, ({ one, many }) => ({
   petType: one(petTypes, {
@@ -112,6 +143,7 @@ export const petTypesRelations = relations(petTypes, ({ many }) => ({
   pets: many(pets),
   bookingsPets: many(bookingsPets),
   petSittersPetTypes: many(petSittersPetTypes),
+  petSittersPetTypesPendingUpdates: many(petSittersPetTypesPendingUpdates),
 }));
 
 export const bookingsPetsRelations = relations(bookingsPets, ({ one }) => ({
@@ -139,6 +171,30 @@ export const petSittersPetTypesRelations = relations(
     petType: one(petTypes, {
       fields: [petSittersPetTypes.petTypeId],
       references: [petTypes.petTypeId],
+    }),
+  }),
+);
+
+export const petSittersPetTypesPendingUpdatesRelations = relations(
+  petSittersPetTypesPendingUpdates,
+  ({ one }) => ({
+    petSitterPendingUpdate: one(petSitterPendingUpdates, {
+      fields: [petSittersPetTypesPendingUpdates.petSitterId],
+      references: [petSitterPendingUpdates.petSitterId],
+    }),
+    petType: one(petTypes, {
+      fields: [petSittersPetTypesPendingUpdates.petTypeId],
+      references: [petTypes.petTypeId],
+    }),
+  }),
+);
+
+export const petSitterImagePendingUpdatesRelations = relations(
+  petSitterImagePendingUpdates,
+  ({ one }) => ({
+    petSitterPendingUpdate: one(petSitterPendingUpdates, {
+      fields: [petSitterImagePendingUpdates.petSitterId],
+      references: [petSitterPendingUpdates.petSitterId],
     }),
   }),
 );
