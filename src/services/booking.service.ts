@@ -53,6 +53,13 @@ const BookingService = {
       contactPhone: booking.contactPhone,
       contactEmail: booking.contactEmail,
       note: booking.note,
+      // Pet owner info
+      petOwnerName: booking.petOwnerName,
+      petOwnerEmail: booking.petOwnerEmail,
+      petOwnerPhone: booking.petOwnerPhone,
+      petOwnerDateOfBirth: booking.petOwnerDateOfBirth,
+      petOwnerProfileImg: booking.petOwnerProfileImg,
+      // Pets with type and image
       pets: booking.pets,
     };
   },
@@ -85,6 +92,29 @@ const BookingService = {
         };
       }),
     );
+  },
+
+  updateBookingStatus: async (
+    bookingId: number,
+    status: string,
+    loggedInUserId: string,
+  ) => {
+    const petSitter = await SitterRepository.getByUserId(loggedInUserId);
+    if (!petSitter) throw new AppError(404, "Pet sitter not found");
+
+    const lookupBookings = await BookingRepository.getBookings({
+      petSitterId: petSitter.petSitterId,
+    });
+    const lookupBookingIds = lookupBookings.map((b) => b.bookingId);
+
+    if (!lookupBookingIds.includes(bookingId)) {
+      throw new AppError(404, "Booking not found or not owned by this sitter");
+    }
+
+    const updated = await BookingRepository.updateBookingStatus(bookingId, status);
+    if (!updated) throw new AppError(500, "Failed to update booking status");
+
+    return updated;
   },
 };
 

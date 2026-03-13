@@ -70,4 +70,10 @@ SitterRoute.put(
   SitterController.updateSitter,
 );
 
+SitterRoute.patch(
+  "/booking/:bookingId/status",
+  [ProtectMiddleware.sitter],
+  BookingController.updateBookingStatus,
+);
+
 export default SitterRoute;

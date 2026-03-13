@@ -1,5 +1,6 @@
 import { Response, NextFunction } from "express";
 import BookingService from "../services/booking.service";
+import AppError from "../errors/AppError";
 import { RequestWithUser } from "../types/booking";
 
 const BookingController = {
@@ -43,6 +44,35 @@ const BookingController = {
       return res.status(200).json(result);
     } catch (error) {
       next(error);
+    }
+  },
+
+  updateBookingStatus: async (req: RequestWithUser, res: Response) => {
+    try {
+      const bookingId = Number(req.params.bookingId);
+      const { status } = req.body;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+
+      const result = await BookingService.updateBookingStatus(
+        bookingId,
+        status,
+        userId,
+      );
+
+      return res.status(200).json({ data: result });
+    } catch (error: unknown) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
     }
   },
 };

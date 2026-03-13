@@ -1,11 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import db from "../db/db";
-import {
-  bookings,
-  bookingsPets,
-  petSitters,
-  users,
-} from "../db/schema";
+import { bookings, bookingsPets, petSitters, users } from "../db/schema";
 import { GetBookingsFilter } from "../types/booking";
 
 const BookingRepository = {
@@ -56,6 +51,19 @@ const BookingRepository = {
       .limit(1)
       .then((rows) => rows[0] ?? null);
 
+    const petOwner = await db
+      .select({
+        petOwnerName: users.name,
+        petOwnerEmail: users.email,
+        petOwnerPhone: users.phone,
+        petOwnerDateOfBirth: users.dateOfBirth,
+        petOwnerProfileImg: users.profileImgUrl,
+      })
+      .from(users)
+      .where(eq(users.userId, booking.petOwnerId))
+      .limit(1)
+      .then((rows) => rows[0] ?? null);
+
     return {
       ...booking,
       pets,
@@ -63,7 +71,21 @@ const BookingRepository = {
       tradeName: sitter?.tradeName ?? null,
       sitterName: sitter?.sitterName ?? null,
       sitterImgUrl: sitter?.sitterImgUrl ?? null,
+      petOwnerName: petOwner?.petOwnerName ?? null,
+      petOwnerEmail: petOwner?.petOwnerEmail ?? null,
+      petOwnerPhone: petOwner?.petOwnerPhone ?? null,
+      petOwnerDateOfBirth: petOwner?.petOwnerDateOfBirth ?? null,
+      petOwnerProfileImg: petOwner?.petOwnerProfileImg ?? null,
     };
+  },
+  updateBookingStatus: async (bookingId: number, status: string) => {
+    const result = await db
+      .update(bookings)
+      .set({ status: status as any, updatedAt: new Date().toISOString() })
+      .where(eq(bookings.bookingId, bookingId))
+      .returning();
+
+    return result[0] ?? null;
   },
 };
 
