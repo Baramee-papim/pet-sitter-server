@@ -64,6 +64,42 @@ const ReviewRepository = {
 
     return { result, totalReviews };
   },
+  createReview: async (payload: {
+    bookingId: number;
+    rating: number;
+    comment: string;
+  }) => {
+    const [review] = await db
+      .insert(reviews)
+      .values({
+        bookingId: payload.bookingId,
+        rating: payload.rating,
+        comment: payload.comment,
+      })
+      .returning();
+
+    return review;
+  },
+
+  findReviewByBookingId: async (bookingId: number) => {
+    const review = await db.query.reviews.findFirst({
+      where: (reviews, { eq }) => eq(reviews.bookingId, bookingId),
+    });
+
+    return review;
+  },
+
+  findAccessibleBookingById: async (bookingId: number, userId: string) => {
+    const booking = await db.query.bookings.findFirst({
+      where: (bookings, { and, eq }) =>
+        and(
+          eq(bookings.bookingId, bookingId),
+          eq(bookings.petOwnerId, userId),
+        ),
+    });
+
+    return booking;
+  },
 
 };
 
