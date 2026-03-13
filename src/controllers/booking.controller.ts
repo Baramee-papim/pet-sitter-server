@@ -1,8 +1,7 @@
-import { User } from "@supabase/supabase-js";
-import { UserRole } from "../types/user";
-import { Request, Response } from "express";
+import { Response, NextFunction } from "express";
 import BookingService from "../services/booking.service";
-type RequestWithUser = Request & { user?: User & { role: UserRole } };
+import { RequestWithUser } from "../types/booking";
+
 const BookingController = {
   getBookings: async (req: RequestWithUser, res: Response) => {
     try {
@@ -30,6 +29,20 @@ const BookingController = {
         return res.status(403).json({ message: error.message });
       }
       res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getOwnerBookingHistory: async (
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const userId = req.user!.id;
+      const result = await BookingService.getOwnerBookingHistory(userId);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
     }
   },
 };
