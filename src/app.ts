@@ -7,6 +7,7 @@ import OwnerRoute from "./routes/owner.route";
 import PetRoute from "./routes/pet.route";
 import SitterRoute from "./routes/sitter.route";
 import AddressRoute from "./routes/address.route";
+import BookingRoute from "./routes/booking.route";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -37,6 +38,7 @@ app.use("/pet-owner", OwnerRoute);
 app.use("/pet-sitter", SitterRoute);
 app.use("/admin", AdminRoute);
 app.use("/address", AddressRoute);
+app.use("/bookings", BookingRoute);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err) {
