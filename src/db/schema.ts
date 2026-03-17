@@ -62,8 +62,8 @@ export const bookings = pgTable(
       mode: "string",
     }).notNull(),
     totalPrice: numeric("total_price", { precision: 7, scale: 2 }).notNull(),
-    status: bookingStatus().default("Waiting for confirm").notNull(),
     note: text(),
+    status: bookingStatus().default("Waiting for confirm").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
@@ -227,9 +227,9 @@ export const petSitters = pgTable(
     userId: uuid("user_id").notNull(),
     experience: numeric({ precision: 3, scale: 1 }),
     tradeName: varchar("trade_name", { length: 50 }),
-    introduction: text(),
-    services: text(),
-    description: text(),
+    introduction: varchar({ length: 500 }),
+    services: varchar({ length: 1000 }),
+    description: varchar({ length: 500 }),
     address: varchar({ length: 100 }),
     latitude: numeric({ precision: 9, scale: 6 }),
     longitude: numeric({ precision: 9, scale: 6 }),
@@ -333,27 +333,15 @@ export const reviews = pgTable(
   ],
 );
 
-export const ragDocuments = pgTable("rag_documents", {
-  ragDocumentId: uuid("rag_document_id").defaultRandom().primaryKey().notNull(),
-  sourceTable: text("source_table"),
-  sourceId: text("source_id"),
-  content: text().notNull(),
-  embedding: vector({ dimensions: 1536 }).notNull(),
-  metadata: jsonb(),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-    .defaultNow()
-    .notNull(),
-});
-
 export const petSitterPendingUpdates = pgTable(
   "pet_sitter_pending_updates",
   {
     petSitterId: integer("pet_sitter_id").primaryKey().notNull(),
     experience: numeric({ precision: 3, scale: 1 }),
     tradeName: varchar("trade_name", { length: 50 }),
-    introduction: text(),
-    services: text(),
-    description: text(),
+    introduction: varchar({ length: 500 }),
+    services: varchar({ length: 1000 }),
+    description: varchar({ length: 500 }),
     address: varchar({ length: 100 }),
     latitude: numeric({ precision: 9, scale: 6 }),
     longitude: numeric({ precision: 9, scale: 6 }),
@@ -410,6 +398,46 @@ export const petSitterPendingUpdates = pgTable(
       "pet_sitters_longitude_check",
       sql`(longitude IS NULL) OR ((longitude >= ('-180'::integer)::numeric) AND (longitude <= (180)::numeric))`,
     ),
+  ],
+);
+
+export const ragDocuments = pgTable(
+  "rag_documents",
+  {
+    ragDocumentId: uuid("rag_document_id")
+      .defaultRandom()
+      .primaryKey()
+      .notNull(),
+    sourceTable: text("source_table"),
+    sourceId: text("source_id"),
+    content: text().notNull(),
+    embedding: vector({ dimensions: 1536 }).notNull(),
+    metadata: jsonb(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("rag_documents_embedding_idx")
+      .using(
+        "ivfflat",
+        table.embedding.asc().nullsLast().op("vector_cosine_ops"),
+      )
+      .with({ lists: "100" }),
+  ],
+);
+
+export const spatialRefSys = pgTable(
+  "spatial_ref_sys",
+  {
+    srid: integer().notNull(),
+    authName: varchar("auth_name", { length: 256 }),
+    authSrid: integer("auth_srid"),
+    srtext: varchar({ length: 2048 }),
+    proj4Text: varchar({ length: 2048 }),
+  },
+  (table) => [
+    check("spatial_ref_sys_srid_check", sql`(srid > 0) AND (srid <= 998999)`),
   ],
 );
 

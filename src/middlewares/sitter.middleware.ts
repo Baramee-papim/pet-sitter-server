@@ -212,6 +212,12 @@ const SitterMiddleware = {
           error: "Introduction must be at least 10 characters long",
         });
       }
+
+      if (introduction.trim().length > 500) {
+        return res.status(400).json({
+          error: "Introduction must be less than 500 characters",
+        });
+      }
     }
 
     if (services !== undefined && services !== null) {
@@ -224,6 +230,12 @@ const SitterMiddleware = {
           error: "Services must be at least 10 characters long",
         });
       }
+
+      if (services.trim().length > 1000) {
+        return res.status(400).json({
+          error: "Services must be less than 1000 characters",
+        });
+      }
     }
 
     if (description !== undefined && description !== null) {
@@ -234,6 +246,12 @@ const SitterMiddleware = {
       if (description.trim().length < 10) {
         return res.status(400).json({
           error: "Description must be at least 10 characters long",
+        });
+      }
+
+      if (description.trim().length > 500) {
+        return res.status(400).json({
+          error: "Description must be less than 500 characters",
         });
       }
     }
@@ -285,7 +303,7 @@ const SitterMiddleware = {
         return res.status(400).json({ error: "Province ID must be a number" });
       }
 
-      if (Number.isInteger(provinceId) && provinceId <= 0) {
+      if (!Number.isInteger(provinceId) || provinceId <= 0) {
         return res.status(400).json({
           error: "Province ID must be a positive integer",
         });
@@ -303,7 +321,7 @@ const SitterMiddleware = {
         return res.status(400).json({ error: "District ID must be a number" });
       }
 
-      if (Number.isInteger(districtId) && districtId <= 0) {
+      if (!Number.isInteger(districtId) || districtId <= 0) {
         return res.status(400).json({
           error: "District ID must be a positive integer",
         });
@@ -323,7 +341,7 @@ const SitterMiddleware = {
         });
       }
 
-      if (Number.isInteger(subDistrictId) && subDistrictId <= 0) {
+      if (!Number.isInteger(subDistrictId) || subDistrictId <= 0) {
         return res.status(400).json({
           error: "Subdistrict ID must be a positive integer",
         });

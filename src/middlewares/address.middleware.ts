@@ -10,7 +10,7 @@ const AddressMiddleware = {
     const provinceId = req.params.provinceId;
     const parsedProvinceId = Number(provinceId);
 
-    if (Number.isInteger(parsedProvinceId) && parsedProvinceId <= 0) {
+    if (!Number.isInteger(parsedProvinceId) || parsedProvinceId <= 0) {
       return res.status(400).json({
         error: "Province ID must be a positive integer",
       });
@@ -33,7 +33,7 @@ const AddressMiddleware = {
     const districtId = req.params.districtId;
     const parsedDistrictId = Number(districtId);
 
-    if (Number.isInteger(parsedDistrictId) && parsedDistrictId <= 0) {
+    if (!Number.isInteger(parsedDistrictId) || parsedDistrictId <= 0) {
       return res.status(400).json({
         error: "District ID must be a positive integer",
       });
