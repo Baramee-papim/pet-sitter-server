@@ -9,6 +9,7 @@ import SitterRoute from "./routes/sitter.route";
 import AddressRoute from "./routes/address.route";
 import BookingRoute from "./routes/booking.route";
 import ReviewRoute from "./routes/review.route";
+import ChatRoute from "./routes/chat.route";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -41,6 +42,7 @@ app.use("/admin", AdminRoute);
 app.use("/address", AddressRoute);
 app.use("/bookings", BookingRoute);
 app.use("/reviews", ReviewRoute);
+app.use("/chat", ChatRoute);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err) {
@@ -49,6 +51,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       error: err.message || "Something went wrong",
     });
   }
+  
   next();
 });
 

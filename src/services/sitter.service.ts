@@ -1,12 +1,16 @@
 import { format } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
 import AppError from "../errors/AppError";
+import DocumentRepository from "../repositories/document.repository";
 import PetRepository from "../repositories/pet.repository";
 import SitterRepository from "../repositories/sitter.repository";
 import supabaseAdmin from "../supabase/admin";
+import { DocumentMetadata } from "../types/chat";
 import { SitterStatus } from "../types/sitter";
 import { UserStatus } from "../types/user";
+import buildSitterEmbeddingContents from "../utils/buildSitterEmbeddingContents";
 import mergeItemsByOrder from "../utils/mergeItemsByOrder";
+import sentenceToVector from "../utils/sentenceToVector";
 
 const bucket = "sitter-assets";
 
@@ -249,7 +253,9 @@ const SitterService = {
                 upsert: true,
               });
 
-            if (error) throw error;
+            if (error) {
+              throw error;
+            }
 
             filePaths.push(filePath);
 
@@ -325,11 +331,9 @@ const SitterService = {
   },
 
   approveUpdateSitter: async (sitterId: number) => {
-    const lookupPendingSitter = await SitterRepository.getPendingUpdateById(
-      sitterId,
-    );
+    const pendingSitter = await SitterRepository.getPendingUpdateById(sitterId);
 
-    if (!lookupPendingSitter) {
+    if (!pendingSitter) {
       throw new AppError(404, "Sitter not found for this pending update");
     }
 
@@ -339,49 +343,82 @@ const SitterService = {
       throw new AppError(404, "Sitter not found");
     }
 
-    const sitterPendingImages =
-      lookupPendingSitter.petSitterImagePendingUpdates.map(
-        (image) => image.imgUrl,
-      );
+    const pendingSitterImages = pendingSitter.petSitterImagePendingUpdates.map(
+      (image) => image.imgUrl,
+    );
 
     const removedImages = sitter.petSitterImages
-      .filter((image) => !sitterPendingImages.includes(image.imgUrl))
+      .filter((image) => !pendingSitterImages.includes(image.imgUrl))
       .map((image) => image.imgUrl.split(`/${bucket}/`)[1]);
 
-    if (removedImages.length) {
-      await supabaseAdmin.storage.from(bucket).remove(removedImages);
+    const metadata: DocumentMetadata = {
+      tradeName: pendingSitter.tradeName ?? undefined,
+      provinceId: pendingSitter.province?.provinceId,
+      districtId: pendingSitter.district?.districtId,
+      petTypeIds: pendingSitter.petSittersPetTypesPendingUpdates.length
+        ? pendingSitter.petSittersPetTypesPendingUpdates.map(
+            (petSitterPetType) => petSitterPetType.petType.petTypeId,
+          )
+        : undefined,
+    };
+
+    const contents = buildSitterEmbeddingContents(
+      pendingSitter.introduction,
+      pendingSitter.services,
+      pendingSitter.description,
+    );
+
+    let embeddings: number[][];
+
+    try {
+      embeddings = await Promise.all(
+        contents.map((content) => sentenceToVector(content)),
+      );
+
+      if (removedImages.length) {
+        await supabaseAdmin.storage.from(bucket).remove(removedImages);
+      }
+    } catch (error) {
+      throw error;
     }
 
     await SitterRepository.update(
       sitterId,
-      lookupPendingSitter.experience,
-      lookupPendingSitter.tradeName,
-      lookupPendingSitter.petSittersPetTypesPendingUpdates.map(
+      pendingSitter.experience,
+      pendingSitter.tradeName,
+      pendingSitter.petSittersPetTypesPendingUpdates.map(
         (petSitterPetType) => petSitterPetType.petType.petTypeId,
       ),
-      lookupPendingSitter.introduction,
-      lookupPendingSitter.services,
-      lookupPendingSitter.description,
-      lookupPendingSitter.address,
-      lookupPendingSitter.latitude,
-      lookupPendingSitter.longitude,
-      lookupPendingSitter.province?.provinceId,
-      lookupPendingSitter.district?.districtId,
-      lookupPendingSitter.subDistrict?.subDistrictId,
+      pendingSitter.introduction,
+      pendingSitter.services,
+      pendingSitter.description,
+      pendingSitter.address,
+      pendingSitter.latitude,
+      pendingSitter.longitude,
+      pendingSitter.province?.provinceId,
+      pendingSitter.district?.districtId,
+      pendingSitter.subDistrict?.subDistrictId,
       "Approved",
       false,
-      sitterPendingImages,
+      pendingSitterImages,
     );
 
     await SitterRepository.deletePendingUpdate(sitterId);
+
+    await DocumentRepository.deleteSitterDocument(sitterId);
+
+    await DocumentRepository.createSitterDocument(
+      sitterId,
+      contents,
+      embeddings,
+      metadata,
+    );
   },
 
   rejectUpdateSitter: async (sitterId: number) => {
-    const lookupPendingSitter = await SitterRepository.getPendingUpdateById(
-      sitterId,
-    );
+    const pendingSitter = await SitterRepository.getPendingUpdateById(sitterId);
 
-    if (!lookupPendingSitter) {
+    if (!pendingSitter) {
       throw new AppError(404, "Sitter not found for this pending update");
     }
 
@@ -393,12 +430,16 @@ const SitterService = {
 
     const sitterImages = sitter.petSitterImages.map((image) => image.imgUrl);
 
-    const removedImages = lookupPendingSitter.petSitterImagePendingUpdates
+    const removedImages = pendingSitter.petSitterImagePendingUpdates
       .filter((pendingImage) => !sitterImages.includes(pendingImage.imgUrl))
       .map((image) => image.imgUrl.split(`/${bucket}/`)[1]);
 
-    if (removedImages.length) {
-      await supabaseAdmin.storage.from(bucket).remove(removedImages);
+    try {
+      if (removedImages.length) {
+        await supabaseAdmin.storage.from(bucket).remove(removedImages);
+      }
+    } catch (error) {
+      throw error;
     }
 
     await SitterRepository.update(
