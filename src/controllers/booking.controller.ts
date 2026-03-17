@@ -1,7 +1,8 @@
 import { Response, NextFunction } from "express";
 import BookingService from "../services/booking.service";
 import AppError from "../errors/AppError";
-import { RequestWithUser } from "../types/booking";
+import { GetBookingListsQuery, RequestWithUser } from "../types/booking";
+import parsePositiveInt from "../utils/parsePositiveInt";
 
 const BookingController = {
   getBookings: async (req: RequestWithUser, res: Response) => {
@@ -9,6 +10,52 @@ const BookingController = {
       const userId = req.user!.id;
       const result = await BookingService.getBookings(userId);
       res.status(200).json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  },
+
+  getBookingLists: async (req: RequestWithUser, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const keyword = (req.query.keyword as string) || "";
+
+      const currentPage = parsePositiveInt(req.query.page, 1);
+      const limit = parsePositiveInt(req.query.limit, 10, 20);
+
+      const allowedStatuses = [
+        "waiting_confirm",
+        "waiting_service",
+        "in_service",
+        "completed",
+        "canceled",
+      ] as const;
+
+      const rawStatus = (req.query.status as string) || "";
+      const status =
+        rawStatus.toLowerCase() === "all" ||
+        !allowedStatuses.includes(rawStatus as any)
+          ? ""
+          : rawStatus;
+
+      const query: GetBookingListsQuery = {
+        keyword,
+        status,
+        currentPage,
+        limit,
+      };
+
+      const { bookings, total, totalPages } =
+        await BookingService.getBookingLists(userId, query);
+
+      const response = {
+        bookings,
+        totalPages: totalPages,
+        currentPage: currentPage,
+        limit: limit,
+        total: total,
+      };
+      res.status(200).json(response);
     } catch (error: any) {
       res.status(500).json({ message: "Internal server error" });
     }
