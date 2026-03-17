@@ -14,8 +14,8 @@ export interface AskChatbotResponse {
   query: string;
   introduction: string;
   sitters: {
+    sitterId: string;
     tradeName: string;
-    url: string;
     description: string;
   }[];
   confidence: "High" | "Medium" | "Low";

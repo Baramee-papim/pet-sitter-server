@@ -10,7 +10,7 @@ if (!process.env.CHAT_BOT_SERVICE_URL) {
 const ChatbotClient = {
   askChatbot: async (query: string, topK?: number) => {
     const response = await axios.post<AskChatbotResponse>(
-      `${process.env.CHAT_BOT_SERVICE_URL}/document/mock`,
+      `${process.env.CHAT_BOT_SERVICE_URL}/document/query`,
       {
         query,
         top_k: topK,
