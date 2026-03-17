@@ -228,6 +228,31 @@ const SitterController = {
 
     return res.status(200).json({ message: "Updated successfully" });
   },
+
+  cancelUpdateSitter: async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
+    try {
+      const user = await AuthService.getUser(token);
+
+      const sitter = await SitterService.getSitterByUserId(user.data.user.id);
+
+      await SitterService.cancelUpdateSitter(sitter.petSitterId, "sitter");
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res.status(200).json({ message: "Cancelled successfully" });
+  },
 };
 
 export default SitterController;

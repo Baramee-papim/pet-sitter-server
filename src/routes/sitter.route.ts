@@ -35,7 +35,6 @@ SitterRoute.get(
   BookingController.getBookingLists,
 );
 
-
 SitterRoute.get(
   "/bookings/:bookingId",
   [ProtectMiddleware.sitter],
@@ -50,10 +49,7 @@ SitterRoute.get(
 
 SitterRoute.get(
   "/:sitterId/reviews",
-  [
-    SitterMiddleware.sitterId,
-    ReviewMiddleware.getReviewsQuery
-  ],
+  [SitterMiddleware.sitterId, ReviewMiddleware.getReviewsQuery],
   ReviewController.getReviewsBySitterId,
 );
 
@@ -81,6 +77,12 @@ SitterRoute.patch(
   "/booking/:bookingId/status",
   [ProtectMiddleware.sitter],
   BookingController.updateBookingStatus,
+);
+
+SitterRoute.delete(
+  "/profile/cancel",
+  [ProtectMiddleware.sitter],
+  SitterController.cancelUpdateSitter,
 );
 
 export default SitterRoute;
