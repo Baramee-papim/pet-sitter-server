@@ -1,7 +1,7 @@
 import SitterRepository from "../repositories/sitter.repository";
 import AppError from "../errors/AppError";
 import BookingRepository from "../repositories/booking.repository";
-import { GetBookingListsQuery } from "../types/booking";
+import { GetBookingListsQuery, UpdateBookingTimeInput } from "../types/booking";
 import { formatDurationLabel, getDurationMinutes } from "../utils/duration";
 
 const BookingService = {
@@ -170,6 +170,14 @@ const BookingService = {
     if (!updated) throw new AppError(500, "Failed to update booking status");
 
     return updated;
+  },
+
+  updateBookingTime: async ({
+    bookingId,
+    startTime,
+    endTime,
+  }: UpdateBookingTimeInput) => {
+    return BookingRepository.updateBookingTime(bookingId, startTime, endTime);
   },
 };
 

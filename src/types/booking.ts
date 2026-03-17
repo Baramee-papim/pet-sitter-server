@@ -9,14 +9,12 @@ export interface GetBookingsFilter {
 
 export type RequestWithUser = Request & { user?: User & { role: UserRole } };
 
-
 export interface GetBookingListsQuery {
   keyword?: string;
   status?: string;
   currentPage?: number;
   limit?: number;
 }
-
 
 export const STATUS_OPTIONS = [
   { value: "all", label: "All status" },
@@ -26,3 +24,25 @@ export const STATUS_OPTIONS = [
   { value: "success", label: "Success" },
   { value: "canceled", label: "Canceled" },
 ];
+
+export type UpdateBookingTimeInput = {
+  bookingId: number;
+  startTime: string;
+  endTime: string;
+};
+
+export interface UpdateBookingTimeParams {
+  bookingId: string;
+  [key: string]: string;
+}
+
+export interface UpdateBookingTimeBody {
+  startTime: string;
+  endTime: string;
+}
+
+export type UpdateBookingTimeRequest = Request<
+  UpdateBookingTimeParams,
+  unknown,
+  UpdateBookingTimeBody
+>;

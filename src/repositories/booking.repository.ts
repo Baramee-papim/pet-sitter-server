@@ -6,6 +6,7 @@ import {
   GetBookingsFilter,
   STATUS_OPTIONS,
 } from "../types/booking";
+import { formatDurationLabel, getDurationMinutes } from "../utils/duration";
 
 const BookingRepository = {
   getBookings: async (filter: GetBookingsFilter) => {
@@ -157,6 +158,32 @@ const BookingRepository = {
       .returning();
 
     return result[0] ?? null;
+  },
+
+  updateBookingTime: async (
+    bookingId: number,
+    startTime: string,
+    endTime: string,
+  ) => {
+    const booking = await db.query.bookings.findFirst({
+      where: (bookings, { eq }) => eq(bookings.bookingId, bookingId),
+    });
+
+    if (!booking) return null;
+
+    const durationMinutes = getDurationMinutes(startTime, endTime);
+    const duration = formatDurationLabel(durationMinutes);
+
+    const [updated] = await db
+      .update(bookings)
+      .set({
+        startTime,
+        endTime,
+      })
+      .where(eq(bookings.bookingId, bookingId))
+      .returning();
+
+    return { ...updated, duration };
   },
 };
 

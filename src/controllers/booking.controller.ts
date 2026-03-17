@@ -1,7 +1,11 @@
 import { Response, NextFunction } from "express";
 import BookingService from "../services/booking.service";
 import AppError from "../errors/AppError";
-import { GetBookingListsQuery, RequestWithUser } from "../types/booking";
+import {
+  GetBookingListsQuery,
+  RequestWithUser,
+  UpdateBookingTimeRequest,
+} from "../types/booking";
 import parsePositiveInt from "../utils/parsePositiveInt";
 
 const BookingController = {
@@ -120,6 +124,27 @@ const BookingController = {
         return res.status(error.statusCode).json({ error: error.message });
       }
       return res.status(500).json({ error: "Internal server error" });
+    }
+  },
+
+  updateBookingTime: async (req: UpdateBookingTimeRequest, res: Response) => {
+    try {
+      const bookingId = Number(req.params.bookingId);
+      const { startTime, endTime } = req.body;
+
+      const updated = await BookingService.updateBookingTime({
+        bookingId,
+        startTime,
+        endTime,
+      });
+
+      if (!updated) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      return res.status(200).json(updated);
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
     }
   },
 };
