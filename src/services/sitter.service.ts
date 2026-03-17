@@ -415,7 +415,10 @@ const SitterService = {
     );
   },
 
-  rejectUpdateSitter: async (sitterId: number) => {
+  cancelUpdateSitter: async (
+    sitterId: number,
+    cancelBy: "sitter" | "admin",
+  ) => {
     const pendingSitter = await SitterRepository.getPendingUpdateById(sitterId);
 
     if (!pendingSitter) {
@@ -456,7 +459,11 @@ const SitterService = {
       undefined,
       undefined,
       undefined,
-      sitter.status !== "Approved" ? "Rejected" : undefined,
+      sitter.status !== "Approved"
+        ? cancelBy === "admin"
+          ? "Rejected"
+          : "Unapproved"
+        : undefined,
       false,
       undefined,
     );

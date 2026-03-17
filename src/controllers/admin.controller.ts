@@ -245,7 +245,7 @@ const AdminController = {
     const sitterId = Number(req.params.sitterId);
 
     try {
-      await SitterService.rejectUpdateSitter(sitterId);
+      await SitterService.cancelUpdateSitter(sitterId, "admin");
     } catch (error) {
       // Client error from service
       if (error instanceof AppError) {

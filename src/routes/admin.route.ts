@@ -64,7 +64,7 @@ AdminRoute.patch(
   AdminController.approveUpdateSitter,
 );
 
-AdminRoute.patch(
+AdminRoute.delete(
   "/pet-sitter/reject/:sitterId",
   [SitterMiddleware.sitterId, ProtectMiddleware.admin],
   AdminController.rejectUpdateSitter,
