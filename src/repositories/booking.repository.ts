@@ -1,7 +1,11 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, ilike, count, or, desc } from "drizzle-orm";
 import db from "../db/db";
-import { bookings, bookingsPets, petSitters, users } from "../db/schema";
-import { GetBookingsFilter } from "../types/booking";
+import { bookings, bookingsPets, petSitters, pets, users } from "../db/schema";
+import {
+  GetBookingListsQuery,
+  GetBookingsFilter,
+  STATUS_OPTIONS,
+} from "../types/booking";
 
 const BookingRepository = {
   getBookings: async (filter: GetBookingsFilter) => {
@@ -21,6 +25,73 @@ const BookingRepository = {
       .where(conditions.length > 0 ? and(...conditions) : undefined);
 
     return result;
+  },
+
+  getBookingLists: async (
+    filter: GetBookingsFilter,
+    query?: GetBookingListsQuery,
+  ) => {
+    const conditions = [];
+    const keywordConditions = [];
+    const statusConditions = [];
+
+    if (filter.petSitterId) {
+      conditions.push(eq(bookings.petSitterId, filter.petSitterId));
+    }
+
+    if (filter.petOwnerId) {
+      conditions.push(eq(bookings.petOwnerId, filter.petOwnerId));
+    }
+
+    if (query?.keyword) {
+      keywordConditions.push(ilike(users.name, `%${query.keyword}%`));
+    }
+
+    if (query?.status) {
+      const useStatus = STATUS_OPTIONS.find(
+        (status: { value: string }) => status.value === query.status,
+      );
+      if (useStatus) {
+        statusConditions.push(eq(bookings.status, useStatus?.label as any));
+      }
+    }
+
+    const offset = ((query?.currentPage ?? 1) - 1) * (query?.limit ?? 10);
+    // const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    let whereClause: any = undefined;
+    if (query?.keyword || query?.status || conditions.length > 0) {
+      whereClause = and(
+        ...(conditions.length > 0 ? [and(...conditions)] : []),
+        ...(keywordConditions.length > 0 ? [or(...keywordConditions)] : []),
+        ...(statusConditions.length > 0 ? [and(...statusConditions)] : []),
+      );
+    } else if (conditions.length > 0) {
+      whereClause = and(...conditions, ...statusConditions);
+    }
+
+    const totalResult = await db
+      .select({ total: count() })
+      .from(bookings)
+      .where(whereClause);
+    const total = totalResult[0]?.total ?? 0;
+
+    const result = await db
+      .select({
+        bookings,
+        users,
+        petCount: count(pets.petId).as("petCount"),
+      })
+      .from(bookings)
+      .innerJoin(users, eq(users.userId, bookings.petOwnerId))
+      .leftJoin(pets, eq(pets.userId, bookings.petOwnerId))
+      .where(whereClause)
+      .groupBy(bookings.bookingId, users.userId)
+      .limit(query?.limit ?? 10)
+      .offset(offset)
+      .orderBy(desc(bookings.updatedAt));
+
+    return { bookings: result, total };
   },
 
   getBookingById: async (bookingId: number) => {
