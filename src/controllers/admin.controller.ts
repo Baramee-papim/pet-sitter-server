@@ -7,6 +7,13 @@ import UserService from "../services/user.service";
 import { AdminGetOwnersQuery, AdminGetSittersQuery } from "../types/admin";
 import { SitterIdParams } from "../types/sitter";
 import { UserIdParams } from "../types/user";
+import ReportService from "../services/report.service";
+import {
+  AdminGetReportsQuery,
+  AllowedReportStatus,
+  ReportStatus,
+} from "../types/report";
+import parsePositiveInt from "../utils/parsePositiveInt";
 
 const AdminController = {
   getOwners: async (
@@ -134,7 +141,7 @@ const AdminController = {
       totalPages: result.totalPages,
       currentPage: page,
       limit: limit,
-      sitters: result.petSitters.map((petSitter) => ({
+      sitters: result.petSitters.map((petSitter: any) => ({
         id: petSitter.petSitterId,
         sitter: petSitter.sitter,
         tradeName: petSitter.tradeName,
@@ -325,6 +332,65 @@ const AdminController = {
     }
 
     return res.status(200).json({ message: "User unbanned successfully" });
+  },
+
+  getReports: async (req: Request, res: Response) => {
+    try {
+      const currentPage = parsePositiveInt(req.query?.page, 1);
+      const limit = parsePositiveInt(req.query?.limit, 10, 20);
+
+      const rawStatus = (req.query.status as string) || "";
+      const status =
+        rawStatus.toLowerCase() === "all" ||
+        !AllowedReportStatus.includes(rawStatus)
+          ? ""
+          : rawStatus;
+      console.log("controller rawStatus", rawStatus);
+      console.log("controller status", status);
+      const query: AdminGetReportsQuery = {
+        status: status as ReportStatus,
+        currentPage: currentPage as number,
+        limit: limit as number,
+      };
+
+      const result = await ReportService.getAllReports(query);
+      return res.status(200).json(result);
+    } catch (error) {
+      // Client error from service
+      console.error("getReports error:", error);
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  },
+  getReportById: async (req: Request<{ reportId: string }>, res: Response) => {
+    const reportId = req.params.reportId;
+    try {
+      const result = await ReportService.getReportById(reportId);
+      return res.status(200).json(result);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  },
+  patchReport: async (req: Request<{ reportId: string }>, res: Response) => {
+    const reportId = req.params.reportId;
+    const status = req.body.status as ReportStatus;
+    try {
+      const result = await ReportService.patchReport(reportId, status);
+      return res.status(200).json(result);
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
   },
 };
 

@@ -81,4 +81,16 @@ AdminRoute.patch(
   SitterController.adminReviewSitter,
 );
 
+AdminRoute.get(
+  "/reports",
+  [ProtectMiddleware.admin],
+  AdminController.getReports,
+);
+
+AdminRoute.get(
+  "/reports/:reportId",
+  [ProtectMiddleware.admin],
+  AdminController.getReportById,
+);
+
 export default AdminRoute;

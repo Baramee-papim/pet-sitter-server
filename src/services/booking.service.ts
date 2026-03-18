@@ -3,6 +3,7 @@ import AppError from "../errors/AppError";
 import BookingRepository from "../repositories/booking.repository";
 import { GetBookingListsQuery, UpdateBookingTimeInput } from "../types/booking";
 import { formatDurationLabel, getDurationMinutes } from "../utils/duration";
+import formatBookingRange from "../utils/formatBookingRange";
 
 const BookingService = {
   createBooking: async (userId: string, data: any) => {
@@ -61,6 +62,11 @@ const BookingService = {
         booking.bookings.startTime,
         booking.bookings.endTime,
       );
+      const label = formatBookingRange(
+        booking.bookings.startTime,
+        booking.bookings.endTime,
+      );
+
       return {
         bookingId: booking.bookings.bookingId,
         petOwnerName: booking.users.name,
@@ -68,6 +74,7 @@ const BookingService = {
         status: booking.bookings.status,
         startTime: booking.bookings.startTime,
         endTime: booking.bookings.endTime,
+        bookingDate: label,
         duration: formatDurationLabel(durationMinutes),
         totalPrice: booking.bookings.totalPrice,
         contactName: booking.bookings.contactName,
