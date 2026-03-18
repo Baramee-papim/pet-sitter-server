@@ -90,7 +90,7 @@ AdminRoute.get(
 AdminRoute.get(
   "/reports/:reportId",
   [ProtectMiddleware.admin],
-  AdminController.getReportById,
+  AdminController.getReportListById,
 );
 
 export default AdminRoute;

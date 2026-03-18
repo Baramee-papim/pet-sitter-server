@@ -365,10 +365,10 @@ const AdminController = {
       return res.status(500).json({ error: "Internal server error" });
     }
   },
-  getReportById: async (req: Request<{ reportId: string }>, res: Response) => {
+  getReportListById: async (req: Request<{ reportId: string }>, res: Response) => {
     const reportId = req.params.reportId;
     try {
-      const result = await ReportService.getReportById(reportId);
+      const result = await ReportService.getReportListById(reportId);
       return res.status(200).json(result);
     } catch (error) {
       // Client error from service
