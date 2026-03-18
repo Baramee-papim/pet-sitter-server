@@ -189,6 +189,15 @@ const SitterService = {
       throw new AppError(404, "Sitter not found for this user");
     }
 
+    if (existingImages) {
+      const imageUrls = sitter.petSitterImages.map((image) => image.imgUrl);
+      existingImages.forEach((image) => {
+        if (!imageUrls.includes(image.url)) {
+          throw new AppError(400, "Image not found in sitter's current images");
+        }
+      });
+    }
+
     const sitterId = sitter.petSitterId;
 
     const lookupPending = await SitterRepository.getPendingUpdateById(sitterId);
