@@ -1,11 +1,57 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import {
+  GetBookingsInDateRangeQuery,
   UpdateBookingTimeParams,
   UpdateBookingTimeBody,
-} from "@/types/booking";
+} from "../types/booking";
+import { dateRegex } from "../utils/regex";
 
 const BookingMiddleware = {
-  UpdateBookingTime: (
+  getBookingInRangeQuery: (
+    req: Request<{}, {}, {}, Partial<GetBookingsInDateRangeQuery>>,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    const { start, end } = req.query;
+
+    // Check for required fields
+    if (!start) {
+      return res.status(400).json({ error: "Start Date is required" });
+    }
+
+    if (!end) {
+      return res.status(400).json({ error: "End Date is required" });
+    }
+
+    // Type validations
+    if (!dateRegex.test(start)) {
+      return res.status(400).json({ error: "Invalid start date" });
+    }
+
+    const parsedStartDate = new Date(start);
+    if (Number.isNaN(parsedStartDate.getTime())) {
+      return res.status(400).json({ error: "Invalid start date" });
+    }
+
+    if (!dateRegex.test(end)) {
+      return res.status(400).json({ error: "Invalid end date" });
+    }
+
+    const parsedEndDate = new Date(end);
+    if (Number.isNaN(parsedEndDate.getTime())) {
+      return res.status(400).json({ error: "Invalid end date" });
+    }
+
+    if (parsedStartDate > parsedEndDate) {
+      return res.status(400).json({
+        error: "Start date must be before end date",
+      });
+    }
+
+    next();
+  },
+
+  updateBookingTime: (
     req: Request<UpdateBookingTimeParams, unknown, UpdateBookingTimeBody>,
     res: Response,
     next: NextFunction,
