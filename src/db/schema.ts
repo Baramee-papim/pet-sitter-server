@@ -244,6 +244,7 @@ export const petSitters = pgTable(
     accountNumber: varchar("account_number", { length: 30 }),
     hasPendingUpdate: boolean("has_pending_update").default(false).notNull(),
     status: petSitterStatus().default("Unapproved").notNull(),
+    adminNote: text("admin_note"),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),

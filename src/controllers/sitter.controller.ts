@@ -7,6 +7,7 @@ import {
   GetSittersQuery,
   SitterIdParams,
   UpdateSitterBody,
+  SitterStatus,
 } from "../types/sitter";
 
 const SitterController = {
@@ -160,6 +161,7 @@ const SitterController = {
       postCode: result.postCode,
       hasPendingUpdate: result.hasPendingUpdate,
       status: result.status,
+      adminNote: result.adminNote,
     };
 
     return res.status(200).json(sitterResponse);
@@ -252,6 +254,34 @@ const SitterController = {
     }
 
     return res.status(200).json({ message: "Cancelled successfully" });
+  },
+
+  adminReviewSitter: async (
+    req: Request<
+      SitterIdParams,
+      {},
+      { status: SitterStatus; adminNote?: string }
+    >,
+    res: Response,
+  ) => {
+    const sitterId = Number(req.params.sitterId);
+    const { status, adminNote } = req.body;
+
+    try {
+      await SitterService.adminReviewSitter(sitterId, status, adminNote);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Review status updated successfully" });
   },
 };
 
