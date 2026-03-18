@@ -290,13 +290,13 @@ const SitterService = {
         longitude !== undefined ? longitude : sitter.longitude,
         provinceId !== undefined
           ? provinceId
-          : sitter.province?.provinceId ?? null,
+          : (sitter.province?.provinceId ?? null),
         districtId !== undefined
           ? districtId
-          : sitter.district?.districtId ?? null,
+          : (sitter.district?.districtId ?? null),
         subDistrictId !== undefined
           ? subDistrictId
-          : sitter.subDistrict?.subDistrictId ?? null,
+          : (sitter.subDistrict?.subDistrictId ?? null),
         finalUrls !== undefined
           ? finalUrls
           : sitter.petSitterImages.map((image) => image.imgUrl),
@@ -469,6 +469,25 @@ const SitterService = {
     );
 
     await SitterRepository.deletePendingUpdate(sitterId);
+  },
+
+  adminReviewSitter: async (
+    sitterId: number,
+    status: SitterStatus,
+    adminNote?: string | null,
+  ) => {
+    const sitter = await SitterRepository.getById(sitterId, false);
+
+    if (!sitter) {
+      throw new AppError(404, "Sitter not found");
+    }
+    if (sitter.status === "Waiting for approval") {
+      throw new AppError(
+        400,
+        "Sitter has a pending update, use approve or cancel update instead",
+      );
+    }
+    await SitterRepository.adminReviewStatus(sitterId, status, adminNote);
   },
 };
 

@@ -91,11 +91,11 @@ const AdminController = {
         ? req.query.hasPendingUpdate.toLowerCase() === "true"
           ? true
           : req.query.hasPendingUpdate.toLowerCase() === "false"
-          ? false
-          : Number(req.query.hasPendingUpdate) ||
-            Number(req.query.hasPendingUpdate) === 0
-          ? Boolean(Number(req.query.hasPendingUpdate))
-          : null
+            ? false
+            : Number(req.query.hasPendingUpdate) ||
+                Number(req.query.hasPendingUpdate) === 0
+              ? Boolean(Number(req.query.hasPendingUpdate))
+              : null
         : null;
     let experience: number[] | null;
     let result;
@@ -180,6 +180,7 @@ const AdminController = {
       postCode: result.postCode,
       hasPendingUpdate: result.hasPendingUpdate,
       status: result.status,
+      adminNote: result.adminNote,
     };
 
     return res.status(200).json(sitterResponse);
