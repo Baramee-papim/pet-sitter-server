@@ -7,8 +7,55 @@ import {
   STATUS_OPTIONS,
 } from "../types/booking";
 import { formatDurationLabel, getDurationMinutes } from "../utils/duration";
+import type { CreateBookingInput } from "../types/booking";
+
+import { inArray } from "drizzle-orm";
+
 
 const BookingRepository = {
+  createBooking: async (data: CreateBookingInput) => {
+    return await db.transaction(async (tx) => {
+      const [booking] = await tx
+        .insert(bookings)
+        .values({
+          petOwnerId: data.petOwnerId,
+          petSitterId: data.petSitterId,
+          contactName: data.contactName,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          totalPrice: data.totalPrice.toString(),
+          note: data.note ?? null,
+        })
+        .returning();
+
+      if (data.petIds?.length) {
+        const petList = await tx
+          .select()
+          .from(pets)
+          .where(inArray(pets.petId, data.petIds));
+
+        await tx.insert(bookingsPets).values(
+          petList.map((pet) => ({
+            bookingId: booking.bookingId,
+            petId: pet.petId,
+            petTypeId: pet.petTypeId,
+            petName: pet.petName,
+            sex: pet.sex,
+            breed: pet.breed,
+            dateOfBirth: pet.dateOfBirth,
+            color: pet.color,
+            weight: pet.weight,
+            about: pet.about ?? null,
+          }))
+        );
+      }
+
+      return booking;
+    });
+  },
+  
   getBookings: async (filter: GetBookingsFilter) => {
     const conditions = [];
 
