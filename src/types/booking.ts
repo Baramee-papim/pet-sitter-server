@@ -46,3 +46,15 @@ export type UpdateBookingTimeRequest = Request<
   unknown,
   UpdateBookingTimeBody
 >;
+export type CreateBookingInput = {
+  petOwnerId: string;
+  petSitterId: number;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  startTime: string;
+  endTime: string;
+  totalPrice: number;
+  note?: string;
+  petIds?: number[];
+};

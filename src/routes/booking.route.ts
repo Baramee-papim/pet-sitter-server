@@ -18,4 +18,9 @@ BookingRouter.patch(
   BookingController.updateBookingTime,
 );
 
+BookingRouter.post(
+  "/",
+  [ProtectMiddleware.owner],
+  BookingController.createBooking
+);
 export default BookingRouter;

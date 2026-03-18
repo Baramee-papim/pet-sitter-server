@@ -9,6 +9,59 @@ import {
 import parsePositiveInt from "../utils/parsePositiveInt";
 
 const BookingController = {
+  createBooking: async (
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const userId = req.user!.id;
+      console.log("BODY:", req.body);
+      console.log("USER:", userId);
+  
+      const {
+        pet_sitter_id,
+        contact_name,
+        contact_email,
+        contact_phone,
+        start_time,
+        end_time,
+        total_price,
+        note,
+        pet_ids,
+      } = req.body;
+  
+      if (
+        !pet_sitter_id ||
+        !contact_name ||
+        !contact_email ||
+        !contact_phone ||
+        !start_time ||
+        !end_time ||
+        !total_price
+      ) {
+        return res.status(400).json({
+          message: "Missing required fields",
+        });
+      }
+  
+      const result = await BookingService.createBooking(userId, {
+        pet_sitter_id,
+        contact_name,
+        contact_email,
+        contact_phone,
+        start_time,
+        end_time,
+        total_price,
+        note,
+        pet_ids,
+      });
+  
+      return res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
   getBookings: async (req: RequestWithUser, res: Response) => {
     try {
       const userId = req.user!.id;

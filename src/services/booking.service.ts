@@ -5,6 +5,24 @@ import { GetBookingListsQuery, UpdateBookingTimeInput } from "../types/booking";
 import { formatDurationLabel, getDurationMinutes } from "../utils/duration";
 
 const BookingService = {
+  createBooking: async (userId: string, data: any) => {
+    if (new Date(data.end_time) <= new Date(data.start_time)) {
+      throw new Error("End time must be after start time");
+    }
+  
+    return await BookingRepository.createBooking({
+      petOwnerId: userId,
+      petSitterId: data.pet_sitter_id,
+      contactName: data.contact_name,
+      contactEmail: data.contact_email,
+      contactPhone: data.contact_phone,
+      startTime: data.start_time,
+      endTime: data.end_time,
+      totalPrice: data.total_price,
+      note: data.note,
+      petIds: data.pet_ids,
+    });
+  },
   getBookings: async (loggedInUserId: string) => {
     const petSitter = await SitterRepository.getByUserId(loggedInUserId);
     if (!petSitter) throw new AppError(404, "Pet sitter not found");
