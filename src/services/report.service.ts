@@ -1,9 +1,37 @@
-import AppError from "../errors/AppError";
-import BookingRepository from "../repositories/booking.repository";
 import ReportRepository from "../repositories/report.repository";
+import { AdminGetReportsQuery, ReportStatus } from "../types/report";
+import BookingRepository from "../repositories/booking.repository";
 import SitterService from "./sitter.service";
+import AppError from "../errors/AppError";
 
 const ReportService = {
+  getAllReports: async (query: AdminGetReportsQuery) => {
+    const result = await ReportRepository.getAllReports(query);
+
+    return {
+      data: result.reports,
+      totalPages: result.totalPages,
+      currentPage: query.currentPage,
+      limit: query.limit,
+      totalReports: result.totalReports,
+    };
+  },
+  getReportByIdForAdmin: async (reportId: string) => {
+    const result = await ReportRepository.getReportByIdForAdmin(reportId);
+    return {
+      data: result,
+    }
+  },
+  patchReportStatusByIdForAdmin: async (id: string, status: ReportStatus) => {
+    const result = await ReportRepository.patchReportStatusByIdForAdmin(id, status);
+    return {
+      data: result,
+    }
+  },
+  deleteReport: async (id: string) => {
+    return await ReportRepository.deleteReport(id);
+  },
+
   createReport: async ({
     userId,
     bookingId,
@@ -33,7 +61,10 @@ const ReportService = {
       throw new AppError(403, "You cannot report this booking");
     }
 
-    const sitter = await SitterService.getSitterById(booking.petSitterId, false);
+    const sitter = await SitterService.getSitterById(
+      booking.petSitterId,
+      false,
+    );
 
     if (!sitter?.sitter?.id) {
       throw new AppError(404, "Pet sitter user not found");
@@ -58,6 +89,7 @@ const ReportService = {
 
     return report;
   },
+
 };
 
 export default ReportService;

@@ -96,7 +96,6 @@ const BookingController = {
         !allowedStatuses.includes(rawStatus as any)
           ? ""
           : rawStatus;
-
       const query: GetBookingListsQuery = {
         keyword,
         status,

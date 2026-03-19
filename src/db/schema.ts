@@ -11,12 +11,15 @@ import {
   timestamp,
   numeric,
   pgPolicy,
+  // type AnyPgColumn,
   unique,
   date,
+  // bigint,
   boolean,
   vector,
   jsonb,
   primaryKey,
+  // pgView,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -331,6 +334,51 @@ export const reviews = pgTable(
     }).onDelete("cascade"),
     unique("reviews_booking_id_key").on(table.bookingId),
     check("reviews_rating_check", sql`(rating >= 1) AND (rating <= 5)`),
+  ],
+);
+
+export const reports = pgTable(
+  "reports",
+  {
+    reportId: serial("report_id").primaryKey().notNull(),
+    reporterUserId: uuid("reporter_user_id").notNull(),
+    reportedUserId: uuid("reported_user_id").notNull(),
+    issue: text().notNull(),
+    description: text(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    resolvedAt: timestamp("resolved_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    cancelledAt: timestamp("cancelled_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    adminNote: text("admin_note"),
+    handledBy: uuid("handled_by"),
+    status: reportStatus().default("New Report").notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.handledBy],
+      foreignColumns: [users.userId],
+      name: "reports_handled_by_fkey",
+    }).onDelete("set null"),
+    foreignKey({
+      columns: [table.reportedUserId],
+      foreignColumns: [users.userId],
+      name: "reports_reported_user_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.reporterUserId],
+      foreignColumns: [users.userId],
+      name: "reports_reporter_user_id_fkey",
+    }).onDelete("cascade"),
   ],
 );
 
@@ -678,65 +726,4 @@ export const petSitterImages = pgTable(
       sql`(image_order >= 0) AND (image_order <= 9)`,
     ),
   ],
-);
-
-export const reports = pgTable(
-  "reports",
-  {
-    reportId: serial("report_id").primaryKey().notNull(),
-
-    reporterUserId: uuid("reporter_user_id").notNull(),
-    reportedUserId: uuid("reported_user_id").notNull(),
-
-    issue: text("issue").notNull(),
-    description: text("description"),
-
-    createdAt: timestamp("created_at", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-
-    updatedAt: timestamp("updated_at", {
-      withTimezone: true,
-      mode: "string",
-    })
-      .defaultNow()
-      .notNull(),
-
-    resolvedAt: timestamp("resolved_at", {
-      withTimezone: true,
-      mode: "string",
-    }),
-
-    cancelledAt: timestamp("cancelled_at", {
-      withTimezone: true,
-      mode: "string",
-    }),
-
-    adminNote: text("admin_note"),
-    handledBy: uuid("handled_by"),
-
-    status: reportStatus().default("New Report").notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.reporterUserId],
-      foreignColumns: [users.userId],
-      name: "reports_reporter_user_id_fkey",
-    }).onDelete("cascade"),
-
-    foreignKey({
-      columns: [table.reportedUserId],
-      foreignColumns: [users.userId],
-      name: "reports_reported_user_id_fkey",
-    }).onDelete("cascade"),
-
-    foreignKey({
-      columns: [table.handledBy],
-      foreignColumns: [users.userId],
-      name: "reports_handled_by_fkey",
-    }).onDelete("set null"),
-  ]
 );
