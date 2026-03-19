@@ -151,9 +151,23 @@ const BookingRepository = {
 
     if (!booking) return null;
 
-    const pets = await db
-      .select()
+    const bookingPets = await db
+      .select({
+        bookingPetId: bookingsPets.bookingPetId,
+        bookingId: bookingsPets.bookingId,
+        petId: bookingsPets.petId,
+        petTypeId: bookingsPets.petTypeId,
+        petName: bookingsPets.petName,
+        sex: bookingsPets.sex,
+        breed: bookingsPets.breed,
+        dateOfBirth: bookingsPets.dateOfBirth,
+        color: bookingsPets.color,
+        weight: bookingsPets.weight,
+        about: bookingsPets.about,
+        imgUrl: pets.imgUrl,
+      })
       .from(bookingsPets)
+      .leftJoin(pets, eq(bookingsPets.petId, pets.petId))
       .where(eq(bookingsPets.bookingId, bookingId));
 
     const review = await db.query.reviews.findFirst({
@@ -187,7 +201,7 @@ const BookingRepository = {
 
     return {
       ...booking,
-      pets,
+      pets: bookingPets,
       review: review ?? null,
       tradeName: sitter?.tradeName ?? null,
       sitterName: sitter?.sitterName ?? null,
