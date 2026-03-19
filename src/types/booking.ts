@@ -14,6 +14,13 @@ export interface GetBookingListsQuery {
   status?: string;
   currentPage?: number;
   limit?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface GetBookingsInDateRangeQuery {
+  start: string;
+  end: string;
 }
 
 export const STATUS_OPTIONS = [

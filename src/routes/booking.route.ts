@@ -14,7 +14,7 @@ BookingRouter.get(
 BookingRouter.patch(
   "/:bookingId/time",
   [ProtectMiddleware.owner],
-  [BookingMiddleware.UpdateBookingTime],
+  [BookingMiddleware.updateBookingTime],
   BookingController.updateBookingTime,
 );
 

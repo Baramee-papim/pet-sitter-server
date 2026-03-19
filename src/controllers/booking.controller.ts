@@ -1,12 +1,14 @@
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import BookingService from "../services/booking.service";
 import AppError from "../errors/AppError";
 import {
   GetBookingListsQuery,
+  GetBookingsInDateRangeQuery,
   RequestWithUser,
   UpdateBookingTimeRequest,
 } from "../types/booking";
 import parsePositiveInt from "../utils/parsePositiveInt";
+import AuthService from "../services/auth.service";
 
 const BookingController = {
   createBooking: async (
@@ -149,6 +151,63 @@ const BookingController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  getBookingsInDateRange: async (
+    req: Request<{}, {}, {}, GetBookingsInDateRangeQuery>,
+    res: Response,
+  ) => {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+
+    const { start, end } = req.query;
+
+    const toThailandDateTime = (dateStr: string, isEndOfDay: boolean) => {
+      const time = isEndOfDay ? "23:59:59" : "00:00:00";
+      // Interpret as time in Thailand (UTC+7) then convert to ISO string
+      return new Date(`${dateStr}T${time}+07:00`).toISOString();
+    };
+
+    const startDate =
+      start && typeof start === "string"
+        ? toThailandDateTime(start, false)
+        : undefined;
+
+    const endDate =
+      end && typeof end === "string"
+        ? toThailandDateTime(end, true)
+        : undefined;
+
+    let result;
+
+    try {
+      const user = await AuthService.getUser(token);
+      result = await BookingService.getBookingLists(user.data.user.id, {
+        startDate,
+        endDate,
+        limit: 999,
+      });
+    } catch (error) {
+      // Client error from service
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      return res.status(500).json({ error: "Internal server error" });
+    }
+
+    const bookingsResponse = result.bookings.map((booking) => ({
+      id: booking.bookingId,
+      ownerName: booking.contactName,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      status: booking.status,
+    }));
+
+    return res.status(200).json({ bookings: bookingsResponse });
   },
 
   updateBookingStatus: async (req: RequestWithUser, res: Response) => {

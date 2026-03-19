@@ -1,4 +1,4 @@
-import { eq, and, ilike, count, or, desc } from "drizzle-orm";
+import { eq, and, ilike, count, or, desc, between } from "drizzle-orm";
 import db from "../db/db";
 import { bookings, bookingsPets, petSitters, pets, users } from "../db/schema";
 import {
@@ -82,6 +82,7 @@ const BookingRepository = {
     const conditions = [];
     const keywordConditions = [];
     const statusConditions = [];
+    const rangeConditions = [];
 
     if (filter.petSitterId) {
       conditions.push(eq(bookings.petSitterId, filter.petSitterId));
@@ -104,19 +105,20 @@ const BookingRepository = {
       }
     }
 
-    const offset = ((query?.currentPage ?? 1) - 1) * (query?.limit ?? 10);
-    // const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    let whereClause: any = undefined;
-    if (query?.keyword || query?.status || conditions.length > 0) {
-      whereClause = and(
-        ...(conditions.length > 0 ? [and(...conditions)] : []),
-        ...(keywordConditions.length > 0 ? [or(...keywordConditions)] : []),
-        ...(statusConditions.length > 0 ? [and(...statusConditions)] : []),
+    if (query?.startDate && query?.endDate) {
+      rangeConditions.push(
+        between(bookings.startTime, query.startDate, query.endDate),
       );
-    } else if (conditions.length > 0) {
-      whereClause = and(...conditions, ...statusConditions);
     }
+
+    const offset = ((query?.currentPage ?? 1) - 1) * (query?.limit ?? 10);
+
+    const whereClause = and(
+      ...(conditions.length > 0 ? [and(...conditions)] : []),
+      ...(keywordConditions.length > 0 ? [or(...keywordConditions)] : []),
+      ...(statusConditions.length > 0 ? [and(...statusConditions)] : []),
+      ...rangeConditions,
+    );
 
     const totalResult = await db
       .select({ total: count() })

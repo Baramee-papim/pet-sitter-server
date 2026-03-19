@@ -1,6 +1,7 @@
 import { Router } from "express";
 import SitterController from "../controllers/sitter.controller";
 import UserController from "../controllers/user.controller";
+import BookingMiddleware from "../middlewares/booking.middleware";
 import ProtectMiddleware from "../middlewares/protect.middleware";
 import SitterMiddleware from "../middlewares/sitter.middleware";
 import UploadMiddleware from "../middlewares/upload.middleware";
@@ -23,16 +24,16 @@ SitterRoute.get(
   SitterController.getSitterProfile,
 );
 
-// SitterRoute.get(
-//   "/bookings",
-//   [ProtectMiddleware.sitter],
-//   BookingController.getBookings,
-// );
-
 SitterRoute.get(
   "/bookings",
   [ProtectMiddleware.sitter],
   BookingController.getBookingLists,
+);
+
+SitterRoute.get(
+  "/bookings/range",
+  [BookingMiddleware.getBookingInRangeQuery, ProtectMiddleware.sitter],
+  BookingController.getBookingsInDateRange,
 );
 
 SitterRoute.get(
