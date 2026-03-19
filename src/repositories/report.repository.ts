@@ -14,14 +14,11 @@ const ReportRepository = {
     const reporterUser = alias(users, "reporterUser");
     const reportedUser = alias(users, "reportedUser");
     const filters = [];
-    ``;
-    console.log(status);
+    
     if (status) {
       const useStatus = REPORT_STATUS_OPTIONS.find(
         (statusOption: { value: string }) => statusOption.value === status,
       );
-      console.log(useStatus);
-      console.log(useStatus?.label);
       if (useStatus) {
         filters.push(eq(reports.status, useStatus?.label as any));
       }
@@ -57,7 +54,7 @@ const ReportRepository = {
 
     return { reports: result, totalPages, totalReports: total[0].total };
   },
-  getReportListById: async (reportId: string) => {
+  getReportByIdForAdmin: async (reportId: string) => {
     const reporterUser = alias(users, "reporterUser");
     const reportedUser = alias(users, "reportedUser");
 
@@ -77,14 +74,16 @@ const ReportRepository = {
       .innerJoin(reportedUser, eq(reports.reportedUserId, reportedUser.userId))
       .where(eq(reports.reportId, parseInt(reportId)));
   },
-  patchReport: async (id: string, status: ReportStatus) => {
-    return await db
+  patchReportStatusByIdForAdmin : async (id: string, status: ReportStatus) => {
+    const result = await db
       .update(reports)
       .set({
         status: status,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(reports.reportId, parseInt(id)));
+
+    return result;
   },
   deleteReport: async (id: string) => {
     return await db.delete(reports).where(eq(reports.reportId, parseInt(id)));

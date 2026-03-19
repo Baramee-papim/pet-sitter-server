@@ -345,8 +345,6 @@ const AdminController = {
         !AllowedReportStatus.includes(rawStatus)
           ? ""
           : rawStatus;
-      console.log("controller rawStatus", rawStatus);
-      console.log("controller status", status);
       const query: AdminGetReportsQuery = {
         status: status as ReportStatus,
         currentPage: currentPage as number,
@@ -365,10 +363,18 @@ const AdminController = {
       return res.status(500).json({ error: "Internal server error" });
     }
   },
-  getReportListById: async (req: Request<{ reportId: string }>, res: Response) => {
+  getReportByIdForAdmin: async (
+    req: Request<{ reportId: string }>,
+    res: Response,
+  ) => {
     const reportId = req.params.reportId;
     try {
-      const result = await ReportService.getReportListById(reportId);
+      const checkingStatusReport =
+        await ReportService.getReportByIdForAdmin(reportId);
+      if (checkingStatusReport.data[0]?.status === "New Report") {
+        await ReportService.patchReportStatusByIdForAdmin(reportId, "Pending");
+      }
+      const result = await ReportService.getReportByIdForAdmin(reportId);
       return res.status(200).json(result);
     } catch (error) {
       // Client error from service
@@ -378,11 +384,17 @@ const AdminController = {
       return res.status(500).json({ error: "Internal server error" });
     }
   },
-  patchReport: async (req: Request<{ reportId: string }>, res: Response) => {
+  patchReportStatusByIdForAdmin: async (
+    req: Request<{ reportId: string }>,
+    res: Response,
+  ) => {
     const reportId = req.params.reportId;
     const status = req.body.status as ReportStatus;
     try {
-      const result = await ReportService.patchReport(reportId, status);
+      const result = await ReportService.patchReportStatusByIdForAdmin(
+        reportId,
+        status,
+      );
       return res.status(200).json(result);
     } catch (error) {
       // Client error from service

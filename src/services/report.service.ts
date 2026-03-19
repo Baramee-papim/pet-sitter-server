@@ -16,14 +16,20 @@ const ReportService = {
       totalReports: result.totalReports,
     };
   },
-  patchReport: async (id: string, status: ReportStatus) => {
-    return await ReportRepository.patchReport(id, status);
+  getReportByIdForAdmin: async (reportId: string) => {
+    const result = await ReportRepository.getReportByIdForAdmin(reportId);
+    return {
+      data: result,
+    }
+  },
+  patchReportStatusByIdForAdmin: async (id: string, status: ReportStatus) => {
+    const result = await ReportRepository.patchReportStatusByIdForAdmin(id, status);
+    return {
+      data: result,
+    }
   },
   deleteReport: async (id: string) => {
     return await ReportRepository.deleteReport(id);
-  },
-  getReportListById: async (reportId: string) => {
-    return await ReportRepository.getReportListById(reportId);
   },
 
   createReport: async ({
@@ -83,6 +89,7 @@ const ReportService = {
 
     return report;
   },
+
 };
 
 export default ReportService;

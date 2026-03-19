@@ -90,7 +90,13 @@ AdminRoute.get(
 AdminRoute.get(
   "/reports/:reportId",
   [ProtectMiddleware.admin],
-  AdminController.getReportListById,
+  AdminController.getReportByIdForAdmin,
+);
+
+AdminRoute.patch(
+  "/reports/:reportId/status",
+  [ProtectMiddleware.admin],
+  AdminController.patchReportStatusByIdForAdmin,
 );
 
 export default AdminRoute;
