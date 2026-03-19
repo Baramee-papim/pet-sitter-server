@@ -300,12 +300,15 @@ const SitterService = {
         provinceId !== undefined
           ? provinceId
           : (sitter.province?.provinceId ?? null),
+
         districtId !== undefined
           ? districtId
           : (sitter.district?.districtId ?? null),
+
         subDistrictId !== undefined
           ? subDistrictId
           : (sitter.subDistrict?.subDistrictId ?? null),
+
         finalUrls !== undefined
           ? finalUrls
           : sitter.petSitterImages.map((image) => image.imgUrl),
