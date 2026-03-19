@@ -9,6 +9,10 @@ import { UserStatus } from "../types/user";
 const bucket = "user-assets";
 
 const UserService = {
+  getUserByUserId: async (userId: string) => {
+    return UserRepository.getById(userId);
+  },
+
   updateUser: async (
     userId: string,
     name: string | undefined,
