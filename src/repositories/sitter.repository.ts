@@ -511,7 +511,7 @@ const SitterRepository = {
       .set({
         status,
         adminNote: status === "Approved" ? null : (adminNote ?? null),
-        hasPendingUpdate: status === "Approved" ? false : true,
+        hasPendingUpdate: false,
       })
       .where(eq(petSitters.petSitterId, sitterId));
   },
