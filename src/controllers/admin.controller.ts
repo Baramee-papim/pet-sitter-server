@@ -262,6 +262,12 @@ const AdminController = {
     const userId = req.params.userId;
 
     try {
+      const role = (await UserService.getUserByUserId(userId)).role;
+
+      if (role === "sitter") {
+        await SitterService.banSitter(userId);
+      }
+
       await UserService.updateUser(
         userId,
         undefined,
@@ -290,6 +296,12 @@ const AdminController = {
     const userId = req.params.userId;
 
     try {
+      const role = (await UserService.getUserByUserId(userId)).role;
+
+      if (role === "sitter") {
+        SitterService.unbanSitter(userId);
+      }
+
       await UserService.updateUser(
         userId,
         undefined,

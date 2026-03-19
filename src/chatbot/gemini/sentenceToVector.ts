@@ -1,4 +1,4 @@
-import geminiClient from "../gemini/client";
+import geminiClient from "./client";
 
 const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
 const GEMINI_EMBEDDING_DIMENSION = 1536;

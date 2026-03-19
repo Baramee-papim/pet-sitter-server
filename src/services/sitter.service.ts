@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
+import sentenceToVector from "../chatbot/gemini/sentenceToVector";
 import AppError from "../errors/AppError";
 import DocumentRepository from "../repositories/document.repository";
 import PetRepository from "../repositories/pet.repository";
@@ -10,7 +11,6 @@ import { SitterStatus } from "../types/sitter";
 import { UserStatus } from "../types/user";
 import buildSitterEmbeddingContents from "../utils/buildSitterEmbeddingContents";
 import mergeItemsByOrder from "../utils/mergeItemsByOrder";
-import sentenceToVector from "../utils/sentenceToVector";
 
 const bucket = "sitter-assets";
 
@@ -379,16 +379,12 @@ const SitterService = {
 
     let embeddings: number[][];
 
-    try {
-      embeddings = await Promise.all(
-        contents.map((content) => sentenceToVector(content)),
-      );
+    embeddings = await Promise.all(
+      contents.map((content) => sentenceToVector(content)),
+    );
 
-      if (removedImages.length) {
-        await supabaseAdmin.storage.from(bucket).remove(removedImages);
-      }
-    } catch (error) {
-      throw error;
+    if (removedImages.length) {
+      await supabaseAdmin.storage.from(bucket).remove(removedImages);
     }
 
     await SitterRepository.update(
@@ -446,12 +442,8 @@ const SitterService = {
       .filter((pendingImage) => !sitterImages.includes(pendingImage.imgUrl))
       .map((image) => image.imgUrl.split(`/${bucket}/`)[1]);
 
-    try {
-      if (removedImages.length) {
-        await supabaseAdmin.storage.from(bucket).remove(removedImages);
-      }
-    } catch (error) {
-      throw error;
+    if (removedImages.length) {
+      await supabaseAdmin.storage.from(bucket).remove(removedImages);
     }
 
     await SitterRepository.update(
@@ -478,6 +470,54 @@ const SitterService = {
     );
 
     await SitterRepository.deletePendingUpdate(sitterId);
+  },
+
+  banSitter: async (userId: string) => {
+    const sitter = await SitterRepository.getByUserId(userId);
+
+    if (!sitter) {
+      throw new AppError(404, "Sitter not found for this user");
+    }
+
+    await DocumentRepository.deleteSitterDocument(sitter.petSitterId);
+  },
+
+  unbanSitter: async (userId: string) => {
+    const sitter = await SitterRepository.getByUserId(userId);
+
+    if (!sitter) {
+      throw new AppError(404, "Sitter not found for this user");
+    }
+
+    const metadata: DocumentMetadata = {
+      tradeName: sitter.tradeName ?? undefined,
+      provinceId: sitter.province?.provinceId,
+      districtId: sitter.district?.districtId,
+      petTypeIds: sitter.petSittersPetTypes.length
+        ? sitter.petSittersPetTypes.map(
+            (petSitterPetType) => petSitterPetType.petType.petTypeId,
+          )
+        : undefined,
+    };
+
+    const contents = buildSitterEmbeddingContents(
+      sitter.introduction,
+      sitter.services,
+      sitter.description,
+    );
+
+    let embeddings: number[][];
+
+    embeddings = await Promise.all(
+      contents.map((content) => sentenceToVector(content)),
+    );
+
+    await DocumentRepository.createSitterDocument(
+      sitter.petSitterId,
+      contents,
+      embeddings,
+      metadata,
+    );
   },
 };
 
