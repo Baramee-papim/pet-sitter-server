@@ -251,9 +251,10 @@ const AdminController = {
 
   rejectUpdateSitter: async (req: Request<SitterIdParams>, res: Response) => {
     const sitterId = Number(req.params.sitterId);
+    const { adminNote } = req.body;
 
     try {
-      await SitterService.cancelUpdateSitter(sitterId, "admin");
+      await SitterService.cancelUpdateSitter(sitterId, "admin", adminNote);
     } catch (error) {
       // Client error from service
       if (error instanceof AppError) {

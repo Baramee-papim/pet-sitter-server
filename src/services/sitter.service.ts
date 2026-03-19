@@ -245,7 +245,6 @@ const SitterService = {
         if (files) {
           const now = new UTCDate();
 
-          // Upload new images with upsert: true to overwrite if same path
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const ext = file.mimetype.split("/")[1];
@@ -275,7 +274,6 @@ const SitterService = {
           }
         }
 
-        // Merge kept images and new uploads by order
         finalUrls = mergeItemsByOrder(
           existingImages ?? [],
           publicUrls.map((url) => ({ url: url })),
@@ -300,15 +298,12 @@ const SitterService = {
         provinceId !== undefined
           ? provinceId
           : (sitter.province?.provinceId ?? null),
-
         districtId !== undefined
           ? districtId
           : (sitter.district?.districtId ?? null),
-
         subDistrictId !== undefined
           ? subDistrictId
           : (sitter.subDistrict?.subDistrictId ?? null),
-
         finalUrls !== undefined
           ? finalUrls
           : sitter.petSitterImages.map((image) => image.imgUrl),
@@ -333,7 +328,6 @@ const SitterService = {
         undefined,
       );
     } catch (error) {
-      // Rollback newly uploaded files on any error
       if (filePaths.length) {
         await supabaseAdmin.storage.from(bucket).remove(filePaths);
       }
@@ -411,6 +405,7 @@ const SitterService = {
       pendingSitterImages,
     );
 
+    await SitterRepository.adminReviewStatus(sitterId, "Approved", null); // 👈 clear adminNote
     await SitterRepository.deletePendingUpdate(sitterId);
 
     await DocumentRepository.deleteSitterDocument(sitterId);
@@ -426,6 +421,7 @@ const SitterService = {
   cancelUpdateSitter: async (
     sitterId: number,
     cancelBy: "sitter" | "admin",
+    adminNote?: string,
   ) => {
     const pendingSitter = await SitterRepository.getPendingUpdateById(sitterId);
 
@@ -449,6 +445,13 @@ const SitterService = {
       await supabaseAdmin.storage.from(bucket).remove(removedImages);
     }
 
+    const newStatus =
+      cancelBy === "admin"
+        ? "Rejected"
+        : sitter.status !== "Approved"
+          ? "Unapproved"
+          : undefined;
+
     await SitterRepository.update(
       sitterId,
       undefined,
@@ -463,14 +466,18 @@ const SitterService = {
       undefined,
       undefined,
       undefined,
-      sitter.status !== "Approved"
-        ? cancelBy === "admin"
-          ? "Rejected"
-          : "Unapproved"
-        : undefined,
+      newStatus,
       false,
       undefined,
     );
+
+    if (newStatus) {
+      await SitterRepository.adminReviewStatus(
+        sitterId,
+        newStatus,
+        cancelBy === "admin" ? (adminNote ?? null) : null, // 👈 set note on reject, clear on sitter cancel
+      );
+    }
 
     await SitterRepository.deletePendingUpdate(sitterId);
   },
