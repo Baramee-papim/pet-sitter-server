@@ -23,9 +23,9 @@ const ChatMiddleware = {
       return res.status(400).json({ error: "Query must be a string" });
     }
 
-    if (query.trim().length < 10) {
+    if (query.trim().length < 5) {
       return res.status(400).json({
-        error: "Query must be at least 10 characters long",
+        error: "Query must be at least 5 characters long",
       });
     }
 

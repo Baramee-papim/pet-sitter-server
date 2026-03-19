@@ -1,16 +1,23 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
+import AuthService from "../services/auth.service";
 import ChatService from "../services/chat.service";
 import { AskChatbotBody } from "../types/chat";
 
 const ChatController = {
   askChatbot: async (req: Request<{}, {}, AskChatbotBody>, res: Response) => {
+    const token = req.headers.authorization?.split(" ")[1];
     const query = req.body.query;
     const topK = req.body.topK || 5;
+    let userId;
     let result;
 
+    if (token) {
+      userId = (await AuthService.getUser(token)).data.user.id;
+    }
+
     try {
-      result = await ChatService.askChatbot(query, topK);
+      result = await ChatService.askChatbot(query, topK, userId);
     } catch (error) {
       // Client error from service
       if (error instanceof AppError) {

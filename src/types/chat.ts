@@ -18,5 +18,5 @@ export interface AskChatbotResponse {
     tradeName: string;
     description: string;
   }[];
-  confidence: "High" | "Medium" | "Low";
+  confidence: "High" | "Medium" | "Low" | null;
 }

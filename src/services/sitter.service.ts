@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { UTCDate } from "@date-fns/utc";
+import sentenceToVector from "../chatbot/gemini/sentenceToVector";
 import AppError from "../errors/AppError";
 import DocumentRepository from "../repositories/document.repository";
 import PetRepository from "../repositories/pet.repository";
@@ -10,7 +11,6 @@ import { SitterStatus } from "../types/sitter";
 import { UserStatus } from "../types/user";
 import buildSitterEmbeddingContents from "../utils/buildSitterEmbeddingContents";
 import mergeItemsByOrder from "../utils/mergeItemsByOrder";
-import sentenceToVector from "../utils/sentenceToVector";
 
 const bucket = "sitter-assets";
 
