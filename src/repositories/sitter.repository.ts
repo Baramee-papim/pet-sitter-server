@@ -227,6 +227,7 @@ const SitterRepository = {
         ratingAvg: true,
         hasPendingUpdate: true,
         status: true,
+        adminNote: true,
       },
       with: {
         user: {
@@ -282,6 +283,7 @@ const SitterRepository = {
         ratingAvg: true,
         hasPendingUpdate: true,
         status: true,
+        adminNote: true,
       },
       with: {
         user: {
@@ -361,7 +363,7 @@ const SitterRepository = {
           orderBy: [asc(petTypes.petTypeId)],
         },
       },
-      where: eq(petSitters.petSitterId, sitterId),
+      where: eq(petSitterPendingUpdates.petSitterId, sitterId),
     });
   },
 
@@ -493,6 +495,25 @@ const SitterRepository = {
     await db
       .delete(petSitterPendingUpdates)
       .where(eq(petSitterPendingUpdates.petSitterId, sitterId));
+  },
+
+  adminReviewStatus: async (
+    sitterId: number,
+    status: SitterStatus,
+    adminNote?: string | null,
+  ) => {
+    if (status === "Rejected" && !adminNote) {
+      throw new Error("Admin note is required");
+    }
+
+    return db
+      .update(petSitters)
+      .set({
+        status,
+        adminNote: status === "Approved" ? null : (adminNote ?? null),
+        hasPendingUpdate: false,
+      })
+      .where(eq(petSitters.petSitterId, sitterId));
   },
 };
 
