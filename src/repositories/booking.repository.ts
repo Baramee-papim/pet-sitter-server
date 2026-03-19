@@ -1,6 +1,6 @@
 import { eq, and, ilike, count, or, desc, between } from "drizzle-orm";
 import db from "../db/db";
-import { bookings, bookingsPets, petSitters, pets, users } from "../db/schema";
+import { bookings, bookingsPets, petSitters, pets, petTypes, users } from "../db/schema";
 import {
   GetBookingListsQuery,
   GetBookingsFilter,
@@ -157,6 +157,7 @@ const BookingRepository = {
         bookingId: bookingsPets.bookingId,
         petId: bookingsPets.petId,
         petTypeId: bookingsPets.petTypeId,
+        petType: petTypes.name,
         petName: bookingsPets.petName,
         sex: bookingsPets.sex,
         breed: bookingsPets.breed,
@@ -168,6 +169,7 @@ const BookingRepository = {
       })
       .from(bookingsPets)
       .leftJoin(pets, eq(bookingsPets.petId, pets.petId))
+      .leftJoin(petTypes, eq(bookingsPets.petTypeId, petTypes.petTypeId))
       .where(eq(bookingsPets.bookingId, bookingId));
 
     const review = await db.query.reviews.findFirst({
