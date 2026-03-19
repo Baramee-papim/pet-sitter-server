@@ -115,11 +115,17 @@ const BookingService = {
       throw new AppError(404, "Booking not found or not owned by this sitter");
     }
 
+    const durationMinutes = getDurationMinutes(
+      booking.startTime,
+      booking.endTime,
+    );
+
     return {
       bookingId: booking.bookingId,
       status: booking.status,
       startTime: booking.startTime,
       endTime: booking.endTime,
+      duration: formatDurationLabel(durationMinutes),
       totalPrice: booking.totalPrice,
       contactName: booking.contactName,
       contactPhone: booking.contactPhone,
